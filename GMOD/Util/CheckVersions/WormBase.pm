@@ -10,8 +10,8 @@ use vars qw/@ISA/;
 
 sub local_version {
   my ($self,@p) = @_;
-  my ($path) = rearrange([qw/ACEDB_PATH/],@p);
-  my $adaptor = $self->adaptor;
+  my ($path,$parent) = rearrange([qw/ACEDB_PATH PARENT/],@p);
+  my $adaptor = ($parent) ? $parent->adaptor : $self->adaptor;
   $path ||= $adaptor->acedb_path . '/elegans';
   my ($realdir,$installed,$modtime) = _read_symlink($path);
   my %response = ( title   => 'WormBase, the C. elegans database',

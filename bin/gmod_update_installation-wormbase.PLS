@@ -23,6 +23,7 @@ print OUT <<'!NO!SUBS!';
 use strict;
 use Getopt::Long;
 use Bio::GMOD::Update;
+#use Bio::GMOD::CheckVersions;
 
 my ($ANALYZE_LOGS,$UPDATE_CODE,@STEPS,@EXCLUDE,
     $VERSION,$SYNC_TO,$FORCE,$HELP,
@@ -63,15 +64,16 @@ $UPDATE_CODE ||= 'true';
 $FTP_SITE    ||= 'dev.wormbase.org',
 
 my $gmod = Bio::GMOD::Update->new(-mod        => 'WormBase',
-                             -tmp_path   => $TMP,
-			     -mysql_path => $MYSQL,
-			     -acedb_path => $ACEDB
-                             -ftp_site   => $FTP_SITE,
-                            );
+                                  -tmp_path   => $TMP,
+			          -mysql_path => $MYSQL,
+			          -acedb_path => $ACEDB
+                                  -ftp_site   => $FTP_SITE,
+                                  );
 
 # Fetch the current live, local, and development versions of the MOD
 # Each method will return a hash reference with keys of:
 #      status, url, title, version, versiond
+
 my %live  = $gmod->live_version();
 my %dev   = $gmod->development_version();
 my %local = $gmod->local_version();

@@ -37,8 +37,18 @@ sub mirror_version {
 }
 
 
+# Local version should be supplied by subclass
+# We not yet have instantiated a CheckVersions::* object
+# if we have come from, say, Update::*
+# Instantiate now, and pass the parent class for the adaptor
+# Exceptionally poor design flaw.
 sub local_version {
-  # LOCAL VERSION SHOULD BE SUPPLIED BY CheckVersions subclass
+  my $self = shift;
+  my $mod  = $self->mod;
+  my $subclass = "Bio::GMOD::Util::CheckVersions::$mod";
+  eval "require $subclass" or $self->logit(-msg=>"Could not subclass $subclass: $!",-die=>1);
+  my %response = $subclass->local_version(-parent => $self);
+  return (wantarray ? %response : $response{version});
 }
 
 # Placeholder - not sure if I am going to implement this

@@ -10,7 +10,7 @@ use ExtUtils::MakeMaker;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 
-my $VERSION = '0.01';
+my $VERSION = '0.02';
 
 WriteMakefile(
 	      NAME         => 'Bio::GMOD',
@@ -29,10 +29,12 @@ WriteMakefile(
 			       'bin/gmod_monitor_installation-wormbase.PLS' => 'bin/gmod_monitor_installation-wormbase.pl',
 			       'bin/gmod_update_installation-wormbase.PLS' => 'bin/gmod_update_installation-wormbase.pl',
 			      },
-	      ($] >= 5.005 
+
+	      ($] >= 5.005
 	       ? (ABSTRACT  => 'Methods for maintaining and interacting with Model Organism Databases',
 		  AUTHOR         => 'Todd Harris (harris@cshl.edu)')
 	       : ()),
+	      #	      'INSTALLSCRIPT'      => $OPTIONS{BIN} || $OPTIONS{INSTALLSCRIPT},
 	     );
 
 #my $working_dir = cwd;
@@ -233,7 +235,7 @@ WriteMakefile(
 ######                                ) : (),
 #              'INSTALLSITEMAN1DIR' => $OPTIONS{INSTALLSITEMAN1DIR}, # don't install man pages for 
 #              'INSTALLSITEMAN3DIR' => $OPTIONS{INSTALLSITEMAN3DIR}, # non-root user
-#	      'INSTALLSCRIPT'      => $OPTIONS{BIN} || $OPTIONS{INSTALLSCRIPT}
+######	      'INSTALLSCRIPT'      => $OPTIONS{BIN} || $OPTIONS{INSTALLSCRIPT}
 #);
 
 #sub interpolate {

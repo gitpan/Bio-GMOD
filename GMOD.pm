@@ -30,7 +30,7 @@ sub new {
 	       -die => 1) unless $mod;
 
   my $adaptor_class = "Bio::GMOD::Adaptor::$mod";
-  eval "require $adaptor_class";
+  eval "require $adaptor_class" or $self->logit(-msg=>"Could not subclass $adaptor_class: $!",-die=>1);
   my $adaptor = $adaptor_class->new($overrides);
   my $name = $adaptor->name;
 
@@ -45,6 +45,7 @@ sub new {
     bless $this,$self;
   }
   $this->{adaptor} = $adaptor;
+  $this->{mod}     = $mod;
   return $this;
 }
 
@@ -83,7 +84,7 @@ sub organism2mod {
 
 # Return the appropriate adaptor object
 sub adaptor { return shift->{adaptor}; }
-
+sub mod     { return shift->{mod};     }
 
 1;
 

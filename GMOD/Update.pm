@@ -33,9 +33,9 @@ sub mirror {
   $self->logit(-msg => "Must supply a local path in which to download files",
 	       -die => 1) unless $local_path;
   my $ftp = Bio::GMOD::Util::Mirror->new(-host      => $adaptor->ftp_site,
-				    -path      => $remote_path,
-				    -localpath => $local_path,
-				    -verbose   => 1);
+					 -path      => $remote_path,
+					 -localpath => $local_path,
+					 -verbose   => 1);
   my $result = $ftp->mirror();
 
   # TODO: Clear out the local directory if mirroring fails

@@ -5,5 +5,18 @@ show progress on downloads (add in file size, too)
 
 reconcile defaults.wormbase.cgi Adaptor::WormBAse.pm and defaults in the Adaptor
 
+announce to GMOD list
 
-documentation!
+
+Future items:
+1. server starting and stopping
+
+2. removal of previous blast versions
+
+3. archiving
+
+4. server monitoring
+
+Update MakeFile.pl - install scripts in bin dir, etc
+
+
