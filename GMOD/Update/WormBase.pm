@@ -16,13 +16,17 @@ sub update {
   $adaptor->parse_params(@p);
 
   my $version = $adaptor->version;
+  my $rsync_module = $adaptor->rsync_module;
 
-  # globally turn on messages to GUI if requested
+  $self->analyze_logs(-version => $version,
+		      -site    => `hostname`);
   $self->prepare_tmp_dir();
   $self->fetch_acedb(-version        => $version);
   $self->fetch_elegans_gff(-version  => $version);
   $self->fetch_briggsae_gff(-version => $version);
   $self->fetch_blast_blat(-version   => $version);
+  $self->rsync_software(-module       => $rsync_module,
+                        -install_root => '/usr/local/wormbase/');
 }
 
 
@@ -38,11 +42,17 @@ sub fetch_acedb {
   my $databases = $adaptor->database_repository;
 
   # The acedb tarball
-  my $acedb       = sprintf($adaptor->acedb_tarball,$version);
+  my $acedb  = sprintf($adaptor->acedb_tarball,$version);
 
   # Local and remote paths
   my $remote_path = "$databases/$version/$acedb";
   my $local_path  = $adaptor->tmp_path . "/$version";
+
+  # Make sure there is enough space first
+  my $disk_space = $adaptor->acedb_disk_space;
+  $self->check_disk_space(-path      => $local_path,
+			  -required  => $disk_space,
+			  -component => 'acedb');
 
   $self->mirror(-remote_path => $remote_path,
 		-local_path  => $local_path);
@@ -89,6 +99,12 @@ sub fetch_elegans_gff {
   my $remote_path = "$databases/$version/$gff";
   my $local_path  = $adaptor->tmp_path . "/$version";
 
+  # Make sure there is enough space first
+  my $disk_space = $adaptor->elegans_gff_disk_space;
+  $self->check_disk_space(-path      => $local_path,
+			  -required  => $disk_space,
+			  -component => 'elegans_gff');
+
   $self->mirror(-remote_path => $remote_path,
 		-local_path  => $local_path);
 
@@ -131,6 +147,12 @@ sub fetch_blast_blat {
   my $remote_path = "$databases/$version/$blast";
   my $local_path  = $adaptor->tmp_path . "/$version";
 
+  # Make sure there is enough space first
+  my $disk_space = $adaptor->blast_disk_space;
+  $self->check_disk_space(-path      => $local_path,
+			  -required  => $disk_space,
+			  -component => 'blast');
+
   $self->mirror(-remote_path => $remote_path,
 		-local_path  => $local_path);
 
@@ -151,10 +173,9 @@ rm -f blast/blast
 cd blast/
 ln -s blast_$version blast
 
-# TO DO: FIDX PERMISSIONS AS NECESSARY
-#chown -R root /usr/local/blat
-#chgrp -R wormbase /usr/local/blat
-#chmod 2775 /usr/local/blat
+# Fix permissions as necessary
+chgrp -R wormbase /usr/local/blat
+chmod 2775 /usr/local/blat
 END
 
   $self->test_for_error(system($command),"Fetching and installing blast databases for WormBase");
@@ -181,10 +202,15 @@ sub fetch_briggsae_gff {
   my $remote_path = "$databases/$version/$gff";
   my $local_path  = $adaptor->tmp_path . "/$version";
 
+  my $disk_space = $adaptor->briggsae_disk_space;
+  $self->check_disk_space(-path      => $local_path,
+			  -required  => $disk_space,
+			  -component => 'briggsae_gff');
+
   my $result = $self->mirror(-remote_path => $remote_path,
 			     -local_path  => $local_path);
 
-  # Perhaps the briggsae GFF isn't present it hasn't been updated
+  # If the briggsae GFF isn't present it hasn't been updated
   # This is not yet complete!  Note that the packaging script also
   # needs to be updated.
   #  unless ($result) {
@@ -243,9 +269,6 @@ END
 
 
 
-
-
-
 #########################################################
 # Log analysis
 #########################################################
@@ -258,59 +281,29 @@ sub analyze_logs {
   $version    =~ /WS(.*)/;
   my $old_version = 'WS' . ($version - 1);
   my $result = system("/usr/local/wormbase/util/log_analysis/analyze_logs $old_version $site");
+
   # We've already fired off the log analysis.  Restart apache to intialize new logs.
+  # THIS SHOULD BE PART OF MONITOR
   system('sudo /usr/local/apache/bin/apachectl restart');
 }
 
 
 
-
-# NOT YET UPDATED
-# Adjust permissions of all the newly installed files
-sub adjust_permissions {
-
-  # Not using the root user and group names
-  # my @info = getpwnam('root');
-
-my $command = <<END;
-
-chown -R root /usr/local/wormbase
-chgrp -R wormbase /usr/local/wormbase
-chmod 2775 /usr/local/wormbase
-
-mkdir -p /usr/local/wormbase/logs
-chmod 2775 /usr/local/wormbase/logs
-
-chown -R root /usr/local/wublast
-chgrp -R wormbase /usr/local/wormbase
-chmod 2775 /usr/local/wublast
-
-chown -R root /usr/local/blat
-chgrp -R wormbase /usr/local/blat
-chmod 2775 /usr/local/blat
-
-END
-;
-
-my $result = system($command);
-  return if ($result != 0);
-  return 1;
-}
-
-sub add_user_perms_to_db {
-  # Configure MySQL for access to the current database
-  # I should make sure that the database is running.
-  # If not, start it.
-  
-  # This privs should be granted to the current user?
-  # Granting of privs will be handled in the individual data modules
-  #mysql -u root -e 'create database elegans'
-  #mysql -u root -e 'create database elegans_load'
-  #mysql -u root -e 'grant all privileges on elegans.* to me@localhost'
-  #mysql -u root -e 'grant all privileges on elegans_load.* to me@localhost'
-  #mysql -u root -e 'grant file on *.* to me@localhost'
-  #mysql -u root -e 'grant select on elegans.* to nobody@localhost'
-}
+# This is rather out of date
+# Configure MySQL and nobody for access to the current database I
+# should make sure that the database is running.  If not, start it.
+#sub add_user_perms_to_db {
+#  my $self = shift;
+#  # This privs should be granted to the current user?
+#  # Granting of privs will be handled in the individual data modules
+#  my $command = <<END;
+#mysql -u root -e 'grant select on elegans.* to nobody@localhost'
+#mysql -u root -e 'grant select on elegans_pmap.* to nobody@localhost'
+#mysql -u root -e 'grant select on briggsae.* to nobody@localhost'
+#END
+#
+#  $self->test_for_error(system($command),"Adjusting permissions for MySQL databases");
+#}
 
 __END__
 
@@ -318,7 +311,7 @@ __END__
 
 =head1 NAME
 
-Bio::GMOD::Update::WormBase - methods for updating a WormBase installation
+Bio::GMOD::Update::WormBase - Methods for updating a WormBase installation
 
 =head1 SYNOPSIS
 
@@ -369,8 +362,7 @@ following steps:
    - fetch tarballs of several MySQL GFF databases
    - fetch blast and blat database tarballs
    - unpack tarballs and adjust permissions
-   - analyze server logs
-   - update software via rysnc
+   - rsyncs software to the production server
 
 Required options are:
 

@@ -1,22 +1,24 @@
-Regression tests
+announce to GMOD list
 
+Before release
+   Regression tests (Archive.pm, Monitor.pm and subclasses)
+   server monitoring (monitor.pm and subclasses)
+   script for monitoring
+   restarting (part of update process / scripts)
 
 show progress on downloads (add in file size, too)
 
-reconcile defaults.wormbase.cgi Adaptor::WormBAse.pm and defaults in the Adaptor
-
-announce to GMOD list
 
 
 Future items:
-1. server starting and stopping
+1. Option to backup software prior to install.
 
-2. removal of previous blast versions
+2 .starting and stopping of servers - is this working / robust
+    during or after an install
 
-3. archiving
+3. server monitoring
+  (uses same starting and stopping classes)
 
-4. server monitoring
+4. archiving or removal of pervious blast versions, databases
 
-Update MakeFile.pl - install scripts in bin dir, etc
-
-
+Update MakeFile.pl - install scripts in bin dir, etc  - nearly done

@@ -1,3 +1,20 @@
+#!perl
+use Config;
+use File::Basename qw(&basename &dirname);
+use Cwd;
+
+$origdir = cwd;
+chdir dirname($0);
+$file = basename($0, '.PL','.PLS');
+#$file .= $^O eq 'VMS' ? '.com' : '.pl';
+
+open OUT,">$file" or die "Can't create $file: $!";
+
+print "Extracting $file (with variable substitutions)\n";
+
+print OUT "$Config{startperl}\n";
+
+print OUT <<'!NO!SUBS!';
 #!/usr/bin/perl
 
 # filename: version.wormbase.cgi
@@ -37,6 +54,10 @@ my $package_modtime = localtime($package_temp[9]);
 print "title=WormBase, the $title\n";
 print "version=$version\n";
 print "released=$modtime\n";
-print "package_version=$package_modtime\n" if $package_modtime;
 
 exit 0;
+!NO!SUBS!
+close OUT or die "Can't close $file: $!";
+chmod 0755, $file or die "Can't reset permissions for $file: $!\n";
+exec("$Config{'eunicefix'} $file") if $Config{'eunicefix'} ne ':';
+chdir $origdir;

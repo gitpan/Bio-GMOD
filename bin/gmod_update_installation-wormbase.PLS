@@ -25,23 +25,23 @@ use Getopt::Long;
 use Bio::GMOD::Update;
 #use Bio::GMOD::CheckVersions;
 
-my ($ANALYZE_LOGS,$UPDATE_CODE,@STEPS,@EXCLUDE,
-    $VERSION,$SYNC_TO,$FORCE,$HELP,
+my (@STEPS,$UPDATE_DATABASES,$UPDATE_SOFTWARE,
+    @EXCLUDE,$VERSION,$SYNC_TO,$FORCE,$HELP,
     $MYSQL,$ACEDB,$TMP,$PURGE,$FTP_SITE);
 GetOptions(
-	    'sync_to=s'    => \$SYNC_TO, # one of live or dev
-	    'version=s'    => \$VERSION,
-	    'force'        => \$FORCE,
-            'purge'        => \$PURGE,
-            'steps=s'      => \@STEPS,
-            'analyze_logs' => \$ANALYZE_LOGS,
-	    'update_code'  => \$UPDATE_CODE,
-            'exclude=s'    => \@EXCLUDE,
-            'mysql=s'      => \$MYSQL,
-            'acedb=s'      => \$ACEDB,
-            'tmp=s'        => \$TMP,
-            'ftp_site=s'   => \$FTP_SITE,
-	    'help'         => \$HELP);
+	    'sync_to=s'      => \$SYNC_TO, # one of live or dev
+	    'force'          => \$FORCE,
+	    'version=s'      => \$VERSION,
+            'purge'          => \$PURGE,
+            'update_databases' => \$UPDATE_DATABASES,
+            'update_software'  => \$UPDATE_SOFTWARE,
+            'steps=s'        => \@STEPS,
+            'exclude=s'      => \@EXCLUDE,
+            'mysql=s'        => \$MYSQL,
+            'acedb=s'        => \$ACEDB,
+            'tmp=s'          => \$TMP,
+            'ftp_site=s'     => \$FTP_SITE,
+	    'help'           => \$HELP);
 
 my $USAGE = <<USAGE;
 This script is a derivative of gmod_update_installation.pl, customized
@@ -60,8 +60,18 @@ die $USAGE if $HELP;
 $MYSQL       ||= '/usr/local/mysql/data';
 $TMP         ||= '/usr/local/gmod/wormbase/releases';
 $SYNC_TO     ||= 'live';
-$UPDATE_CODE ||= 'true';
 $FTP_SITE    ||= 'dev.wormbase.org',
+@STEPS = split(/,/,join(',',@STEPS));
+
+push (@STEPS,qw/acedb elegans_gff briggsae_gff blast/) if $UPDATE_DATABASES;
+push (@STEPS,qw/software/) if $UPDATE_SOFTWARE;
+
+# In essence, do $gmod->update() if @STEPS is not provided
+# $gmod->update(-version => $desired_version);
+push (@STEPS,qw/acedb elegans_gff briggsae_gff blast software/)
+   if (!$UPDATE_DATABASES && !$UPDATE_SOFTWARE && !@STEPS);
+
+my %steps = map { $_ => 1 } @STEPS;
 
 my $gmod = Bio::GMOD::Update->new(-mod        => 'WormBase',
                                   -tmp_path   => $TMP,
@@ -102,44 +112,54 @@ $desired_version = $VERSION if $VERSION;
 # Which rsync module should we sync to?
 my $rsync_module = ($SYNC_TO eq 'dev') ? 'wormbase-dev' : 'wormbase-live';
 
+# Check to see if we are up-to-date only if we are NOT trying to force
+# an install
+
+# Synchronize software if requested (or skip if not)
+do_rsync() unless (!defined $steps{software});
+
 unless ($FORCE) {
   if ($local{version} eq $desired_version) {
-    do_rsync() if $UPDATE_CODE;
-    print "Your WormBase installation is up-to-date: " . $local{version};
+    print "Your WormBase installation is up-to-date: " . $local{version} . "\n";
     exit;
   }
 }
 
-$gmod->analyze_logs(-version => $desired_version,
-		    -site    => `hostname`) if $ANALYZE_LOGS;
+foreach (@STEPS) {
+    # Assume we will be downloading
+    $gmod->prepare_tmp_dir(-sync_to => $SYNC_TO) if (@STEPS > 2);
 
-if (@STEPS) {
-  foreach (@STEPS) {
-      my %steps2methods = ( acedb        => 'fetch_acedb',
-                              elegans_gff  => 'fetch_elegans_gff',
-                              briggsae_gff => 'fetch_briggsae_gff',
-                              blast        => 'fetch_blast_blat');
-      my $method = $steps2methods{$_};
-      $gmod->$method(-version => $desired_version);
-   }
-} else {
-  # Do them all
-  $gmod->update(-version => $desired_version);
+     my %steps2methods = ( acedb        => 'fetch_acedb',
+                             elegans_gff  => 'fetch_elegans_gff',
+                             briggsae_gff => 'fetch_briggsae_gff',
+                             blast        => 'fetch_blast_blat');
+     my $method = $steps2methods{$_};
+     if ($_ eq 'analyze_logs') {
+        $gmod->analyze_logs(-version => $desired_version,
+	                    -site    => `hostname`);
+      } elsif ($method) {
+         $gmod->$method(-version => $desired_version);
+      } else {}
 }
 
-# Update the software via rsync
-do_rsync() if $UPDATE_CODE;
+print "Your WormBase installation is up-to-date ($desired_version)!\n";
 
 $gmod->cleanup() if $PURGE;
 
 
 
+
+
+
+###################################
+# Begin subs
+###################################
 sub do_rsync {
   my $exclude = join(" ",map {"--exclude='$_'"} @EXCLUDE);
   $gmod->rsync_software(-module       => $rsync_module,
                         -exclude      => $exclude,
                         -install_root => '/usr/local/wormbase/',
-                        ) if $UPDATE_CODE;
+                        );
 }
 
 sub print_keys {
@@ -176,12 +196,14 @@ Available options include (default values in parenthesis):
  --purge     [boolean] Purge tmp download folder following upgrade (false)
 
  Update tasks:
+ --update_databases [boolean] update the databases [true]
+ --update_software  [boolean] update the software [true]
  --steps         [list...] Which components of the update to execute (all; see below)
- --analyze_logs  [boolean] Analyze WormBase logs; requires Analog and ReportMagic. (false)
+
 
  Code maintenance:
- --update_code   [boolean] Do an rsync update of the WormBase software. (true)
- --exclude       [list...] Files, paths, or patterns to exclude from the rsync updatae (none)
+ --skip_software [boolean] Whether or not to update the software (see below)
+ --exclude       [list...] Files, paths, or patterns to exclude from the rsync update (none)
 
  System paths:
  --mysql         Full path to the MySQL data directory (/usr/local/mysql/data)
@@ -191,16 +213,63 @@ Available options include (default values in parenthesis):
 
 =head1 Controlling which update steps are executed
 
-If the --steps option is not specified, all primary steps of the
-update will be executed.  This includes:
+You can broadly control which steps are executed by passing either the
+--update_database and/or the --update_software flags.
+
+If you would like more specific control, you can specify specific
+steps to run during the update by passing a comma-separated list with
+the "--steps" paramater.  Available steps are:
 
   acedb         Fetch and install the acedb database
   elegans_gff   Fetch and install the C. elegans GFF database
   briggsae_gff  Fetch and install the C. briggsae GFF database
   blast         Fetch and install the blast/blat databases
+  software      Rsync the software
+  analyze_logs  WormBase logs; requires Analog and ReportMagic
 
-Alternatively, you can specify any one or several of these options as
-a space-separated list to perform only that step.
+The --update_database flag is equivalent to "--steps
+acedb,elegans_gff,briggsae_gff,blast" and the --update_software flag
+is equivalent "--steps software".
+
+If the --steps option is not specified or the --update_* options are
+omitted, the following steps will be executed:
+
+   acedb, elegans_gff, briggsae_gff, blast, software
+
+=head1 Examples
+
+Do an update of both software and databases
+
+  ./gmod_update_installation-wormbase.pl \
+           --sync_to live \
+           --update_software \
+           --update_databases
+
+      Or more simply:
+
+  ./gmod_update_installation-wormbase.pl \
+           --sync_to live \
+
+Fetch the most up-to-date version of the code without updating
+databases:
+
+  ./gmod_update_installation-wormbase.pl \
+           --sync_to live \
+           --update_software
+
+Official mirror sites should use a command like:
+
+  ./gmod_update_installation-wormbase.pl \
+           --sync_to live \
+           --update_databases \
+           --update_software \
+           --steps analyze_logs
+
+Update databases without updating the software:
+
+  ./gmod_update_installation-wormbase.pl \
+           --sync_to live \
+           --update_databases
 
 =head1 Excluding files from the syncing process
 
@@ -215,7 +284,7 @@ as these are exluded by default.
 =head1 Running under cron
 
 You may wish to run this script under cron to ensure that your
-installation is always up-to-date. 
+installation is always up-to-date.
 
 A suggested crontab entry for a simple local installation is:
 
@@ -223,8 +292,11 @@ A suggested crontab entry for a simple local installation is:
 
 A suggested crontab entry for official WormBase mirror sites is:
 
- 0 2,14 * * * gmod_update_intallation.pl --sync_to live --purge 1 --analyze_logs 1
+ 0 2,14 * * * gmod_update_intallation.pl --sync_to live \
+        --update_databases --update_software \
+        --steps analyze_logs
 
+ 
 Crontab entries like these will check for updates twice a day --
 including updating the software. Be sure to include any necessary
 options as well, such as the path to your mysql data directory.

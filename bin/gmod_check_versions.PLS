@@ -27,8 +27,6 @@ my $mod = shift or die "Usage: gmod_check_version.pl [mod]  eg WormBase, FlyBase
 
 my $gmod = Bio::GMOD::Util::CheckVersions->new(-mod=>$mod);
 
-print $gmod;
-
 my %live  = $gmod->live_version();
 my %dev   = $gmod->development_version();
 my %local = $gmod->local_version();

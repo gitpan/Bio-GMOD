@@ -16,7 +16,7 @@ sub new {
   # Is a defaults script available?
   if ($adaptor->defaults_cgi) {
     my $ua        = LWP::UserAgent->new();
-    $ua->agent('Bio::GMOD.pm/$VERSION');
+    $ua->agent('Bio::GMOD.pm/0.021');
     my $request = HTTP::Request->new('GET',$adaptor->defaults_cgi);
     my $response = $ua->request($request);
 
@@ -32,10 +32,18 @@ sub new {
       $adaptor->{status} = "SUCCESS";
     } else {
       # Couldn't fetch the defaults script - maybe working offline
-      $self->warning(-msg => "Couldn't fetch defaults script: " . $response->status_line . 
-		     '. You may be working offline. Defaults will be
+      #$self->warning(-msg => "Couldn't fetch defaults script: " . $response->status_line .
+	#	     '. You may be working offline. Defaults will be
+	#	    populated from the $adaptor object or from
+	#	    parameters passed to new()');
+      # Until fully tested, let's require that you be online.
+      # WiMax is coming anyways, right ;)
+      $self->logit(-msg => "Couldn't fetch defaults script: " . $response->status_line .
+		   '. You may be working offline. Defaults will be
 		    populated from the $adaptor object or from
-		    parameters passed to new()');
+		    parameters passed to new()'
+		   -die=>1
+		  );
     }
   }
 

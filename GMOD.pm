@@ -22,10 +22,11 @@ sub new {
 	       -die => 1)
     unless $mod || $species || $organism;
   $mod = $self->species2mod($species) if $species;
+  $mod = $self->organism2mod($organism) if $organism;
+
   $self->logit(-msg => "The species $species is not a currently available MOD.",
 	       -die => 1) unless $mod;
 
-  $mod = $self->organism2mod($organism) if $organism;
   $self->logit(-msg => "The organism $organism is not a currently available MOD.",
 	       -die => 1) unless $mod;
 
@@ -64,7 +65,7 @@ sub species2mod {
 
   # Maybe someone has used Genus species or G. species
   foreach my $species (keys %species2mod) {
-    return $species if ($provided_species =~ /$species/);
+    return $species2mod{$species} if ($provided_species =~ /$species/);
   }
   return 0;
 }

@@ -107,21 +107,21 @@ __END__
 
 =head1 NAME
 
-$file - Maintain a MOD installation
+gmod_update_installation.pl - Maintain a MOD installation
 
 =head1 USAGE
 
 This script provides a convenient mechanism to maintain a MOD
 installation.  It should be excecuted with super user privileges.
 
-  \$ $file [options]
+  $ gmod_update_installation.pl [options]
 
 =head1 OPTIONS
 
 The following options are generically available for any MOD (default
 values in parenthesis):
 
- MOD (one of the following is required)
+ MOD:
  --mod       One of WormBase, FlyBase, SGD, etc
 
  Versions:
@@ -132,7 +132,7 @@ values in parenthesis):
  System paths:
  --tmp       Full path to the temporary directory to hold downloads (/usr/local/gmod/tmp)
 
- Miscellaneous
+ Miscellaneous:
  --purge     [boolean] Purge the tmp download folder following upgrade (false)
  --help      Display this message
 
@@ -180,7 +180,7 @@ L<Bio::GMOD>, L<Bio::GMOD::Update>
 
 Todd Harris <harris@cshl.edu>.
 
-Copyright (c) 2004-2005 Cold Spring Harbor Laboratory
+Copyright (c) 2003-2005 Cold Spring Harbor Laboratory
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.  See DISCLAIMER.txt for

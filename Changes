@@ -1,10 +1,25 @@
 Revision history for Perl extension WormBase.
 
+0.021 
+  - Adaptor::* objects can now only be initialized online (failures were occuring
+    when Adaptor defaults were out-of-sync with those originating from the CGI.
+  - Added code for monitoring a MOD installation: Monitor.pm, 
+    acedb.pm, mysql.pm, httpd.pm, etc
+  - Added Email.pm for more sophistacated notifications.
+    Can be used for monitoring, updates, etc for more sophisticated 
+    or conditional reporting than just relying on STDOUT from cron.
+  - Update.pm - added method that checks for sufficient disk space 
+    for installs
+  - No longer croaks when trying to download a file that has
+    already been downloaded
+  - Fixed output formatting
+  - Fixed problem in reading installation date of local database
+  - Overhauled Makefile.PL - now installs scripts and CGIs if requested
+
 0.02  Wed Feb 23 07:04:12 2005
-       - Fixed problems when calling subclassed CheckVersions 
-         from within Update.pm
+  - Fixed problems when calling subclassed CheckVersions 
+    from within Update.pm
 
 0.01  Wed Aug 11 17:10:40 2004
-	- original version; created by h2xs 1.22 with options
-		-X -n WormBase
+  - original version; created by h2xs 1.22 with options -X -n Bio::GMOD
 

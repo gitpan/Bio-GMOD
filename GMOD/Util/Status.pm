@@ -38,23 +38,17 @@ sub logit {
 sub warning {
   my ($self,@p) = @_;
   my ($msg) = rearrange([qw/MSG/],@p);
-  print STDERR "---->$msg\n";
+  print STDERR "\n----> $msg\n";
 }
 
-# The messages log is used to display brief messages
-# above the progress meter of the application
-sub gui_messages {
-  my ($self,$msg) = @_;
-  print MESSAGES "$msg...\n";
-}
 
 sub test_for_error {
   my ($self,$result,$msg) = @_;
   if ($result != 0) {
-    $self->logit(-msg => "$msg: failed, $!",
+    $self->logit(-msg => "---> $msg: failed, $!\n",
 		 -die => 1,);
   } else {
-    $self->warning(-msg => "$msg: succeeded");
+    $self->logit(-msg => "$msg: succeeded");
   }
 }
 
@@ -66,38 +60,14 @@ sub fetch_date {
 }
 
 
-# Create a formatted string - useful for emails and such
-sub status_string {
-  my ($self,@p) = @_;
-  my ($timing,$msg,$status) = rearrange([qw/TIMING MSG STATUS/],@p);
-  $status ||= 'ok';
-  my $MAX_LENGTH = 60;
-
-  my $date = $self->fetch_date;
-  # Pad the string with '.' up to MAX_LENGTH in length;
-  my $string = sprintf("%-*s %*s [%s]",
-		       (length $msg) + 1,$msg,
-		       $MAX_LENGTH - ((length $msg) + 2),
-		       ("." x ($MAX_LENGTH - ((length $msg) + 2))),
-		       $status);
-  $self->{$timing . "_status_string"} = "[$date] $string";
+# DEPRECATED?
+# The messages log is used to display brief messages
+# above the progress meter of the application
+sub gui_messages {
+  my ($self,$msg) = @_;
+  #  print MESSAGES "$msg...\n";
 }
 
-
-# Status flags are used for testing various services like acedb,
-# mysqld, httpd or whatever
-sub set_status_flags {
-  my ($self,$timing,$status) = @_;
-  # Timing is one of initial or final
-  # Status is one of up or down
-
-  $self->{$timing . "_status"} = $status;
-  $self->{"is_" . $status}++;    # A redundant flag, provided as a convenience
-
-  if ($status eq 'up') {
-    $self->{is_down} = undef;
-  }
-}
 
 
 1;

@@ -48,23 +48,26 @@ sub new {
   return bless { %opts },$class;
 }
 
-sub path { return shift->{path}; }
-#  my $p = $_[0]->{path};
-#  $_[0]->{path} = $_[1] if defined $_[1];
-#  $p;
-#}
+sub path {
+  # return shift->{path};}
+  my $p = $_[0]->{path};
+  $_[0]->{path} = $_[1] if defined $_[1];
+  $p;
+}
 
-sub ftp  { return shift->{ftp}; }
-#  my $p = $_[0]->{ftp};
-#  $_[0]->{ftp} = $_[1] if defined $_[1];
-#  $p;
-#}
+sub ftp  {
+  # return shift->{ftp}; }
+  my $p = $_[0]->{ftp};
+  $_[0]->{ftp} = $_[1] if defined $_[1];
+  $p;
+}
 
-sub verbose { return shift->{verbose}; }
-#  my $p = $_[0]->{verbose};
-#  $_[0]->{verbose} = $_[1] if defined $_[1];
-#  $p;
-#}
+sub verbose {
+  # return shift->{verbose}; }
+  my $p = $_[0]->{verbose};
+  $_[0]->{verbose} = $_[1] if defined $_[1];
+  $p;
+}
 
 # top-level entry point for mirroring.
 sub mirror {
@@ -111,9 +114,8 @@ sub get_file {
        and ($ltime >= $rtime) 
        and ($lsize == $rsize) ) {
     $self->warning(-msg => "Getting file $path: not newer than local copy.") if $self->verbose;
-    return;
+    return 1;
   }
-  
 
   $self->logit(-msg => "Downloading file $path");
   $ftp->get($path) or ($self->warning(-msg=>$ftp->message) and return);

@@ -13,6 +13,8 @@ sub live_version {
   my ($self,@p) = @_;
   my $adaptor = $self->adaptor;
   my $response = _check_version_cgi($adaptor->live_url,$adaptor->version_cgi_live);
+  # Save the current live version
+  $adaptor->{defaults}->{live_version} = $response->{version};
   return (wantarray ? %$response : $response->{version});
 }
 
@@ -24,6 +26,8 @@ sub development_version {
     return (wantarray ? ( site => 'no development server specified' ) : 'no development server specified');
   }
   my $response = _check_version_cgi($adaptor->development_url,$adaptor->version_cgi_dev);
+  # Save the current dev version
+  $adaptor->{defaults}->{dev_version} = $response->{version};
   return (wantarray ? %$response : $response->{version});
 }
 
@@ -35,7 +39,6 @@ sub mirror_version {
   my $response = _check_version_cgi($site,"$site/$cgi");
   return (wantarray ? %$response : $response->{version});
 }
-
 
 # Local version should be supplied by subclass
 # We not yet have instantiated a CheckVersions::* object
@@ -52,20 +55,35 @@ sub local_version {
 }
 
 # Placeholder - not sure if I am going to implement this
-sub package_version {
+#sub package_version {
+#}
+
+# Read the contents of a provided symlink (or path) to parse out a version
+# Returning the full path the symlink points at, the installed version
+# and its modtime
+sub read_symlink {
+  my ($self,$path) = @_;
+  my $realdir = -l $path ? readlink $path : $path;
+  my ($root) = $path =~ /(.*\/).*/;
+  my $full_path = $root . "/$realdir";
+  my @temp = stat($full_path);
+  my $modtime = localtime($temp[9]);
+  return ($realdir,$modtime);
 }
 
 
 
-# PRIVATE METHODS
 
+##################################
+# PRIVATE METHODS
+##################################
 sub _check_version_cgi {
   my ($site,$url) = @_;
   # Version script holds a simple cgi that dumps out the
   # title, release date, and version of the database
   $url ||= $site;
   my $ua  = LWP::UserAgent->new();
-  $ua->agent('Bio::GMOD::Util::CheckVersions/$VERSION');
+  $ua->agent('Bio::GMOD::Util::CheckVersions/0.021');
   my $request = HTTP::Request->new('GET',$url);
   my $response = $ua->request($request);
   my %response;
@@ -96,7 +114,7 @@ __END__
 
 =head1 NAME
 
-Bio::GMOD::Util::CheckVersions - find current versions of GMOD installations
+Bio::GMOD::Util::CheckVersions - Find current versions of GMOD installations
 
 =head1 SYNOPSIS
 
@@ -180,6 +198,13 @@ live_version();
 local_version() should be supplied by a MOD specific CheckVersions
 subclass.
 
+=item $mod->read_symlink($path)
+
+Read the symlink at the provided path. This is useful, for example,
+when an installation uses a top-level symlink to point at the
+currently installed version of a release.  In these cases,
+read_symlink() can be used to fetch the currently installed version.
+
 =back
 
 =head2 PRIVATE METHODS
@@ -191,6 +216,8 @@ subclass.
 Check the version at the provided site returning a hash of status,
 title, version, released, and site. This subroutine relies on the
 small CGI script located at /db/util/dump_version on each site.
+
+=over 4
 
 =back
 

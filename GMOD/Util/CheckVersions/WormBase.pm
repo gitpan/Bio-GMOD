@@ -13,7 +13,10 @@ sub local_version {
   my ($path,$parent) = rearrange([qw/ACEDB_PATH PARENT/],@p);
   my $adaptor = ($parent) ? $parent->adaptor : $self->adaptor;
   $path ||= $adaptor->acedb_path . '/elegans';
-  my ($realdir,$installed,$modtime) = _read_symlink($path);
+  my ($realdir,$modtime) = $self->read_symlink($path);
+  my ($installed) = $realdir =~ /(WS\d+)$/;
+  $installed = ($installed) ? $installed : 'None installed';
+
   my %response = ( title   => 'WormBase, the C. elegans database',
 		   site     => "local installation at $path",
 		   version  => $installed,
@@ -24,74 +27,38 @@ sub local_version {
 
 
 # =head3 PACKAGES
-
 # SITE IS OPTIONAL (reads PACKAGE from SiteDefaults)
 # The site/local should be model for other subs
 # Pass --site to override the default site for the currently selected adaptor
 # Pass --local to fetch the version from the local filesystem
 #      (optionally include a --path option for the local path)
 #       Defaults to reading CURRENT_PACKAGE_SYMLINK in the SiteDefaults
-
 # INFRASTRUCUTRE FOR COMPATIBILITY
 # There should be a current_release symlink pointing to
 # the current package version
 
+# Fetch the current version of the package
+# This can be done by reading the local file system
+# or from the CGI itself
 #sub package_version {
 #  my ($self,@p) = @_;
-#  my ($site,$local,$path) = rearrange([qw/SITE LOCAL PATH/],@p);
-#  my %response;
-#  if ($local) {
+#  my ($path) = rearrange([qw/PATH/],@p);
+#  my $response;
+#  if ($path) {
 #    # Try to fetch the current package version from the local filesystem
-#    $path ||= CURRENT_PACKAGE_SYMLINK;
 #    my ($realdir,$release,$modtime) = _read_symlink($path);
-#    %response = ( # title   => 'WormBase, the C. elegans database',
+#    $response = ( # title   => 'WormBase, the C. elegans database',
 #		 site     => "local installation at $path",
 #		 version  => $release,
 #		 released => $modtime,
 #		 status   => ($release ne 'None installed') ? 'success' : $release);
 #  } else {
-#    %response = _check_version_cgi(CURRENT_PACKAGE_SYMLINK);
+#    # If not trying to fetch the data from a local server,
+#    # just use the development server
+#    $response = _check_version_cgi($self->development_url);
 #  }
-#  return (wantarray ? %response : $response{version});
+#  return \%$response;
 #}
-
-
-# Fetch the current version of the package
-# This can be done by reading the local file system
-# or from the CGI itself
-sub package_version {
-  my ($self,@p) = @_;
-  my ($path) = rearrange([qw/PATH/],@p);
-  my $response;
-  if ($path) {
-    # Try to fetch the current package version from the local filesystem
-    my ($realdir,$release,$modtime) = _read_symlink($path);
-    $response = ( # title   => 'WormBase, the C. elegans database',
-		 site     => "local installation at $path",
-		 version  => $release,
-		 released => $modtime,
-		 status   => ($release ne 'None installed') ? 'success' : $release);
-  } else {
-    # If not trying to fetch the data from a local server,
-    # just use the development server
-    $response = _check_version_cgi($self->development_url);
-  }
-  return \%$response;
-}
-
-
-# Read the contents of a provided symlink (or path) to parse out a version
-# Returning the full path the symlink points at, the installed version
-# and its modtime
-sub _read_symlink {
-  my $path = shift;
-  my $realdir = -l $path ? readlink $path : $path;
-  my ($installed) = $realdir =~ /(WS\d+)$/;
-  $installed = ($installed) ? $installed : 'None installed',"\n";
-  my @temp = stat($realdir);
-  my $modtime = localtime($temp[9]);
-  return ($realdir,$installed,$modtime);
-}
 
 
 __END__
@@ -146,14 +113,7 @@ of the database, this subroutine may fail.
 
 =head2 PRIVATE METHODS
 
-=over 4
-
-=item _read_symlink($path)
-
-Read the symlink at the provided path. Used to read the symlink
-linking pointing to the current version of Acedb.
-
-=back
+None.
 
 =head1 BUGS
 

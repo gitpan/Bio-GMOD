@@ -3,14 +3,15 @@ bin/gmod_monitor_installation-wormbase.PLS
 bin/gmod_monitor_installation.PLS
 bin/gmod_update_installation-wormbase.PLS
 bin/gmod_update_installation.PLS
+cgi-bin/defaults.wormbase.PLS
+cgi-bin/README
+cgi-bin/version.wormbase.PLS
 Changes
 docs/CPAN-namespace_proposal.txt
-etc/defaults.wormbase.cgi
-etc/README
-etc/version.wormbase.cgi
 GMOD.pm
 GMOD/Adaptor.pm
 GMOD/Adaptor/WormBase.pm
+GMOD/Archive/WormBase.pm
 GMOD/Update.pm
 GMOD/Update/WormBase.pm
 GMOD/Util/CheckVersions.pm
@@ -22,5 +23,15 @@ Makefile.PL
 MANIFEST			This list of files
 META.yml
 README
-t/1.t
+t/Adaptor.t
+t/Archive.t
+t/BioGMOD.t
+t/CheckVersions.t
+t/CheckVersionsWormBase.t
+t/Mirror.t
+t/More.pm
+t/Rearrange.t
+t/Status.t
+t/Update.t
+t/UpdateWormBase.t
 TODO
