@@ -8,7 +8,7 @@ use Cwd;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 
-my $VERSION = '0.021';
+my $VERSION = '0.022';
 
 my $working_dir = cwd;
 

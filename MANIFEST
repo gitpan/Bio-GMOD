@@ -11,6 +11,7 @@ docs/CPAN-namespace_proposal.txt
 GMOD.pm
 GMOD/Adaptor.pm
 GMOD/Adaptor/WormBase.pm
+GMOD/Archive.pm
 GMOD/Archive/WormBase.pm
 GMOD/Update.pm
 GMOD/Update/WormBase.pm
@@ -19,6 +20,11 @@ GMOD/Util/CheckVersions/WormBase.pm
 GMOD/Util/Mirror.pm
 GMOD/Util/Rearrange.pm
 GMOD/Util/Status.pm
+install_util/cgi_install.PLS
+install_util/conf_install.PLS
+install_util/gbrowse_ppm_install.PLS
+install_util/GuessDirectories.pm
+install_util/htdocs_install.PLS
 Makefile.PL
 MANIFEST			This list of files
 META.yml

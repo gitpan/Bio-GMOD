@@ -1,6 +1,9 @@
 Revision history for Perl extension WormBase.
 
-0.021 
+0.022 Thur March 16 07:41:02 2005
+  - Added install_util dir to manifest!
+
+0.021 Wed March 16 22:07:12 2005
   - Adaptor::* objects can now only be initialized online (failures were occuring
     when Adaptor defaults were out-of-sync with those originating from the CGI.
   - Added code for monitoring a MOD installation: Monitor.pm, 
