@@ -1,0 +1,442 @@
+package Bio::GMOD::Update::WormBase;
+
+use strict;
+use vars qw/@ISA/;
+use Bio::GMOD::Update;
+use Bio::GMOD::Util::Rearrange;
+
+@ISA = qw/Bio::GMOD::Update/;
+
+################################################
+#  WormBase-specific update methods
+################################################
+sub update {
+  my ($self,@p) = @_;
+  my $adaptor = $self->adaptor;
+  $adaptor->parse_params(@p);
+
+  my $version = $adaptor->version;
+
+  # globally turn on messages to GUI if requested
+  $self->prepare_tmp_dir();
+  $self->fetch_acedb(-version        => $version);
+  $self->fetch_elegans_gff(-version  => $version);
+  $self->fetch_briggsae_gff(-version => $version);
+  $self->fetch_blast_blat(-version   => $version);
+}
+
+
+sub fetch_acedb {
+  my ($self,@p) = @_;
+  my $adaptor = $self->adaptor;
+  $adaptor->parse_params(@p);
+
+  # Version to update to
+  my $version = $adaptor->version;
+
+  # Where to find the database tarballs.
+  my $databases = $adaptor->database_repository;
+
+  # The acedb tarball
+  my $acedb       = sprintf($adaptor->acedb_tarball,$version);
+
+  # Local and remote paths
+  my $remote_path = "$databases/$version/$acedb";
+  my $local_path  = $adaptor->tmp_path . "/$version";
+
+  $self->mirror(-remote_path => $remote_path,
+		-local_path  => $local_path);
+
+  my $acedb_path = $adaptor->acedb_path;
+
+  unless ($adaptor->dl_only) {
+    $self->logit(-msg => "Unpacking and installing $acedb");
+    chdir($acedb_path);
+    system("gunzip -c $local_path/$acedb | tar xf -");
+    unlink($acedb_path . '/elegans');
+    symlink("elegans_$version",'elegans');
+
+    # Adjust permissions
+    my $command = <<END;
+chown -R acedb $acedb_path
+chgrp -R acedb $acedb_path
+chmod 2775 $acedb_path
+chown acedb $acedb_path/bin/*
+chgrp acedb $acedb_path/bin/*
+END
+
+    $self->test_for_error(system($command),"Fetching and installing acedb for WormBase");
+  }
+}
+
+
+sub fetch_elegans_gff {
+  my ($self,@p) = @_;
+
+  my $adaptor = $self->adaptor;
+  $adaptor->parse_params(@p);
+
+  # Version to update to
+  my $version = $adaptor->version;
+
+  # Where to find the database tarballs.
+  my $databases = $adaptor->database_repository;
+
+  # The gff tarball
+  my $gff       = sprintf($adaptor->elegans_gff_tarball,$version);
+
+  # Local and remote paths
+  my $remote_path = "$databases/$version/$gff";
+  my $local_path  = $adaptor->tmp_path . "/$version";
+
+  $self->mirror(-remote_path => $remote_path,
+		-local_path  => $local_path);
+
+  my $mysql_path = $adaptor->mysql_path;
+
+  unless ($adaptor->dl_only) {
+    $self->logit(-msg => "Unpacking and installing $gff");
+    my $command = <<END;
+cd $mysql_path
+mv $mysql_path/elegans $mysql_path/elegans.bak
+gunzip -c $local_path/$gff | tar xf -
+rm -rf $mysql_path/elegans.bak
+rm -rf $mysql_path/elegans_pmap.bak
+chgrp -R mysql $mysql_path/elegans_pmap
+chgrp -R mysql $mysql_path/elegans
+chown -R mysql $mysql_path/elegans_pmap
+chown -R mysql $mysql_path/elegans
+END
+
+    $self->test_for_error(system($command),"Fetching and installing C. elegans GFF database for WormBase");
+  }
+}
+
+sub fetch_blast_blat {
+  my ($self,@p) = @_;
+
+  my $adaptor = $self->adaptor;
+  $adaptor->parse_params(@p);
+
+  # Version to update to
+  my $version = $adaptor->version;
+
+  # Where to find the database tarballs.
+  my $databases = $adaptor->database_repository;
+
+  # The gff tarball
+  my $blast = sprintf($adaptor->blast_tarball,$version);
+
+  # Local and remote paths
+  my $remote_path = "$databases/$version/$blast";
+  my $local_path  = $adaptor->tmp_path . "/$version";
+
+  $self->mirror(-remote_path => $remote_path,
+		-local_path  => $local_path);
+
+  unless ($adaptor->dl_only) {
+    $self->logit(-msg => "Unpacking and installing $blast");
+    my $command = <<END;
+cd /usr/local/wormbase
+# Deal with blat
+rm -rf blat.previous
+mkdir blat.previous
+mv blat/* blat.previous/.
+
+# Create the blast directory
+mkdir blast
+gunzip -c $local_path/$blast | tar xf -
+mv blast_$version blast/.
+rm -f blast/blast
+cd blast/
+ln -s blast_$version blast
+
+# TO DO: FIDX PERMISSIONS AS NECESSARY
+#chown -R root /usr/local/blat
+#chgrp -R wormbase /usr/local/blat
+#chmod 2775 /usr/local/blat
+END
+
+  $self->test_for_error(system($command),"Fetching and installing blast databases for WormBase");
+  }
+}
+
+
+sub fetch_briggsae_gff {
+  my ($self,@p) = @_;
+
+  my $adaptor = $self->adaptor;
+  $adaptor->parse_params(@p);
+
+  # Version to update to
+  my $version = $adaptor->version;
+
+  # Where to find the database tarballs.
+  my $databases = $adaptor->database_repository;
+
+  # The gff tarball
+  my $gff       = sprintf($adaptor->briggsae_gff_tarball,$version);
+
+  # Local and remote paths
+  my $remote_path = "$databases/$version/$gff";
+  my $local_path  = $adaptor->tmp_path . "/$version";
+
+  my $result = $self->mirror(-remote_path => $remote_path,
+			     -local_path  => $local_path);
+
+  # Perhaps the briggsae GFF isn't present it hasn't been updated
+  # This is not yet complete!  Note that the packaging script also
+  # needs to be updated.
+  #  unless ($result) {
+  #    # Do we have a briggsae DB installed? If not, fetch the stable version
+  #    unless (-d "$mysql_path/briggsae") {
+  #      my $stable = $adaptor->database_repository_stable;
+  #      my $remote_path = $stable . "/briggsae/$gff";
+  #    }
+  #  }
+
+  my $mysql_path = $adaptor->mysql_path;
+  unless ($adaptor->dl_only) {
+    $self->logit(-msg => "Unpacking and installing $gff");
+    my $command = <<END;
+cd $mysql_path
+mv $mysql_path/briggsae $mysql_path/briggsae.bak
+gunzip -c $local_path/$gff | tar xf -
+rm -rf $mysql_path/briggsae.bak
+chgrp -R mysql $mysql_path/briggsae
+chown -R mysql $mysql_path/briggsae
+END
+
+    $self->test_for_error(system($command),"Fetching and installing C. briggsae GFF database for WormBase");
+  }
+}
+
+
+# THe libraires are not included above
+# This really needs to be worked in
+# This will only be used for WormBase packages
+#sub fetch_libraries {
+#  my $version = shift;
+#  my $ftp = "ftp://$ftp_site/$ftp_path/$version";
+#  chdir("$TMP/$version");
+#
+#  my $ignore_libraries;
+#  if (! -e "libraries_$version.tgz") {
+#    $self->logit(-msg     => "Downloading libraries_$version.ace.tgz - $version-specific libraries");
+#    my $lib_path = $ftp_site . FTP_LIBRARIES;
+#    $ignore_libraries = system("curl -O ftp://$lib_path/libraries_$version.tgz");
+#    # $ignore_libraries = system("curl -O ftp://$lib_path/libraries_current.tgz");
+#    $self->logit(-msg     => "Couldn't fetch/no new libraries for $version: $!, not rebuilding");
+#  }
+#  
+#  unless ($ignore_libraries) {
+#    $self->logit(-msg     => "Unpacking and installing libraries_$version.tgz");
+#    system("gunzip -c libraries_$version.tgz | tar xf -");
+#    chdir("libraries_$version");
+#    system("cp -r Library /Library");
+#    system("cp -r usr /usr");
+#    # Link the current blast databases
+#    chdir("/usr/local/blast");
+#    symlink('/usr/local/wormbase/blast/blast','databases');
+#  }
+#}
+
+
+
+
+
+
+#########################################################
+# Log analysis
+#########################################################
+sub analyze_logs {
+  my ($self,@p) = @_;
+  my ($site,$version) = rearrange(qw/SITE VERSION/,@p);
+  $site    ||= `hostname`;
+  return unless $version;
+
+  $version    =~ /WS(.*)/;
+  my $old_version = 'WS' . ($version - 1);
+  my $result = system("/usr/local/wormbase/util/log_analysis/analyze_logs $old_version $site");
+  # We've already fired off the log analysis.  Restart apache to intialize new logs.
+  system('sudo /usr/local/apache/bin/apachectl restart');
+}
+
+
+
+
+# NOT YET UPDATED
+# Adjust permissions of all the newly installed files
+sub adjust_permissions {
+
+  # Not using the root user and group names
+  # my @info = getpwnam('root');
+
+my $command = <<END;
+
+chown -R root /usr/local/wormbase
+chgrp -R wormbase /usr/local/wormbase
+chmod 2775 /usr/local/wormbase
+
+mkdir -p /usr/local/wormbase/logs
+chmod 2775 /usr/local/wormbase/logs
+
+chown -R root /usr/local/wublast
+chgrp -R wormbase /usr/local/wormbase
+chmod 2775 /usr/local/wublast
+
+chown -R root /usr/local/blat
+chgrp -R wormbase /usr/local/blat
+chmod 2775 /usr/local/blat
+
+END
+;
+
+my $result = system($command);
+  return if ($result != 0);
+  return 1;
+}
+
+sub add_user_perms_to_db {
+  # Configure MySQL for access to the current database
+  # I should make sure that the database is running.
+  # If not, start it.
+  
+  # This privs should be granted to the current user?
+  # Granting of privs will be handled in the individual data modules
+  #mysql -u root -e 'create database elegans'
+  #mysql -u root -e 'create database elegans_load'
+  #mysql -u root -e 'grant all privileges on elegans.* to me@localhost'
+  #mysql -u root -e 'grant all privileges on elegans_load.* to me@localhost'
+  #mysql -u root -e 'grant file on *.* to me@localhost'
+  #mysql -u root -e 'grant select on elegans.* to nobody@localhost'
+}
+
+__END__
+
+=pod
+
+=head1 NAME
+
+Bio::GMOD::Update::WormBase - methods for updating a WormBase installation
+
+=head1 SYNOPSIS
+
+  # Update your WormBase installation
+  use Bio::GMOD::Update;
+  my $mod = Bio::GMOD::Update->new(-mod => 'WormBase');
+  $mod->update(-version => 'WS136');
+
+=head1 DESCRIPTION
+
+Bio::GMOD::Update::WormBase contains subroutines that simplify the
+maintenance of a WormBase installation.  You will not normally need to
+create a Bio::GMOD::Update::WormBase object manually - these will be
+created automatically by Bio::GMOD::Update.
+
+=head1 PUBLIC METHODS
+
+=over 4
+
+=item $mod = Bio::GMOD::Update->new()
+
+The generic new() method is provided by Bio::GMOD.pm.  new() provides
+the ability to override system installation paths.  If you have a
+default WormBase installation this should not be necessary. In
+particular, the following paths may differ on your system:
+
+  --tmp_path    The full path to your temporary download directory
+  --mysql_path  The full path to your mysql directory
+  --acedb_path  The full path to your acedb directory
+
+If these options are not provided, the installer will download files
+to /usr/local/gmod/tmp, install acedb files at /usr/local/acedb,
+and install GFF mysql databases at /usr/local/mysql/data.
+
+See Bio::GMOD.pm and Bio::GMOD::Adaptor for a full description of all default
+paths for your MOD of interest.
+
+=item $mod->update(@options)
+
+update() is provided as convenience, wrapping individual methods for
+downloading prepackaged databases necessary for a MOD installation.
+Typically, update() is provided by the MOD adaptor of interest.
+
+For the Bio::GMOD::Update::WormBase module, update() performs the
+following steps:
+
+   - fetch a tarball of the acedb database
+   - fetch tarballs of several MySQL GFF databases
+   - fetch blast and blat database tarballs
+   - unpack tarballs and adjust permissions
+   - analyze server logs
+   - update software via rysnc
+
+Required options are:
+
+ -version     The WS version to update to (if available on the server)
+
+If you'd like to simply download but not install the prepackaged
+databases, you can pass boolean true using:
+
+ -dl_only    download but not install
+
+update() returns a list of all components succesfully downloaded (and
+installed) if succesful or false if an error occured.  You can fetch
+the nature of the error by calling $mod->status
+
+=item fetch_acedb, fetch_elegans_gff, fetch_briggsae_gff, fetch_blast
+
+These four methods can all be used to fetch and install the four
+primary components of a WormBase installation as outlined above.
+
+Like update(), you can specify the -version and -dl_only options as
+discussed above.  This enables you to write scripts that download
+several different versions of the database for a single instance of
+WormBase::Update.  You may also specify either acedb_path or
+mysql_path to specify the path to the acedb installation directory or
+the mysql data directory as appropriate instead of supplying it to the
+new() method.
+
+=item $mod->analyze_logs(-version=>'WS130');
+
+Analyze WormBase logs for the previous version. You must specify the
+WS version of the previous version.  This method requires that you
+have both Analog and Report Magic installed and that they exist in
+your path (or the superusers path).  Large access logs can take some
+time to analyze.  This option will also analyze logs on a year-to-date
+and server lifetime-to-date basis.
+
+=item $mod->cleanup()
+
+Delete the contents of the temporary directory.  Due to the size of
+the prepackaged databases, this is not recommended unless all steps
+have succeeded!
+
+=back
+
+=head1 PRIVATE METHODS
+
+None.
+
+=head1 BUGS
+
+None reported.
+
+=head1 SEE ALSO
+
+L<Bio::GMOD>, L<Bio::GMOD::Update>, L<Bio::GMOD::Adaptor>
+
+=head1 AUTHOR
+
+Todd W. Harris E<lt>harris@cshl.eduE<gt>.
+
+Copyright (c) 2003-2005 Cold Spring Harbor Laboratory.
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut
+
+
+1;

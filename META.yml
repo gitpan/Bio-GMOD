@@ -1,0 +1,11 @@
+#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
+name:         Bio-GMOD
+version:      0.01
+version_from: 
+installdirs:  site
+requires:
+    WWW::Mechanize:                1.0
+    LWP::UserAgent:                2.023
+
+distribution_type: module
+generated_by: ExtUtils::MakeMaker version 6.12
