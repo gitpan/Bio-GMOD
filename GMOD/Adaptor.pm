@@ -6,7 +6,11 @@ use LWP::UserAgent;
 use Bio::GMOD::Util::CheckVersions;
 use Bio::GMOD::Util::Rearrange;
 
-@ISA = qw/Bio::GMOD Bio::GMOD::Util::CheckVersions/;
+@ISA = qw/
+  Bio::GMOD
+  Bio::GMOD::Util::CheckVersions
+  /;
+#  Bio::GMOD::StandardURLs
 
 sub new {
   my ($self,$overrides) = @_;
@@ -14,9 +18,11 @@ sub new {
   eval {"require $self"} or $self->logit(-msg => "Couldn't require the $self package: $!",-die => 1);
 
   # Is a defaults script available?
+  # This should be converted to XML
   if ($adaptor->defaults_cgi) {
-    my $ua        = LWP::UserAgent->new();
-    $ua->agent('Bio::GMOD.pm/0.021');
+    my $ua      = LWP::UserAgent->new();
+    my $version = $self->biogmod_version;
+    $ua->agent("Bio::GMOD.pm/$version");
     my $request = HTTP::Request->new('GET',$adaptor->defaults_cgi);
     my $response = $ua->request($request);
 
@@ -32,18 +38,15 @@ sub new {
       $adaptor->{status} = "SUCCESS";
     } else {
       # Couldn't fetch the defaults script - maybe working offline
-      #$self->warning(-msg => "Couldn't fetch defaults script: " . $response->status_line .
-	#	     '. You may be working offline. Defaults will be
-	#	    populated from the $adaptor object or from
-	#	    parameters passed to new()');
+
       # Until fully tested, let's require that you be online.
       # WiMax is coming anyways, right ;)
-      $self->logit(-msg => "Couldn't fetch defaults script: " . $response->status_line .
-		   '. You may be working offline. Defaults will be
-		    populated from the $adaptor object or from
-		    parameters passed to new()'
-		   -die=>1
-		  );
+
+      $adaptor->logit(-msg => "Couldn't fetch defaults script:\n\t"
+		      . $response->status_line .
+		      "\n\tYou may be working offline. Defaults will be populated from adaptor object",
+		      # -die=>1
+		     );
     }
   }
 
@@ -81,6 +84,7 @@ sub parse_params {
     $self->{defaults}->{lc($key)} = $value;
   }
 }
+
 
 __END__
 

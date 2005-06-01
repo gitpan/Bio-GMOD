@@ -1,19 +1,19 @@
 # This is -*-Perl-*- code
 # Bio::GMOD Test Harness Script for Modules
-# $Id: CheckVersionsWormBase.t,v 1.2 2005/06/01 02:19:26 todd Exp $
+# $Id: acedb.t,v 1.2 2005/05/31 22:31:58 todd Exp $
 
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl test.t'
 
 use strict;
-use vars qw($NUMTESTS $DEBUG $MODULE);
+use vars qw($NUMTESTS $DEBUG $MODULE $SGIFACE);
 
 use lib '..','.','./blib/lib';
 
 my $error;
 
 BEGIN {
-  $MODULE = 'Bio::GMOD::Util::CheckVersions::WormBase';
+  $MODULE = 'Bio::GMOD::Admin::Monitor::acedb';
   $error = 0;
   # to handle systems with no installed Test module
   # we include the t dir (where a copy of Test.pm is located)
@@ -24,7 +24,16 @@ BEGIN {
   }
   use Test::More;
 
-  $NUMTESTS = 4;
+  if (-e 't/do_monitor_acedb.tests') {
+    open IN,'t/do_monitor_acedb.tests';
+    while (<IN>) {
+      $SGIFACE++;
+    }
+    $NUMTESTS = 4;
+  } else {
+    $NUMTESTS = 1;
+  }
+
   plan tests => $NUMTESTS;
 
   # Try to use the module
@@ -34,6 +43,7 @@ BEGIN {
     $error = 1;
   }
 }
+exit 1 unless $SGIFACE;
 
 exit 0 if $error;
 
@@ -44,23 +54,18 @@ END {
 }
 
 # Begin tests
-my $gmod  = Bio::GMOD::Util::CheckVersions->new(-mod => 'WormBase');
-ok($gmod,'new constructor via Bio::GMOD');
+my $monitor  = Bio::GMOD::Admin::Monitor::acedb->new();
+ok($monitor,'new constructor via Bio::GMOD');
 
-my ($live_version) = $gmod->live_version;
-ok($live_version,'live_version()');
+my ($string,$status) = $monitor->check_status();
+if ($status == 0) {  # If acedb is down, make sure the string indicates that
+  like($string,qr/down/,$string);
+} else {
+  like($string,qr/up/,$string);
+}
 
-my ($dev_version) = $gmod->development_version;
-ok($dev_version,'dev_version()');
 
-#my ($local_version) = $gmod->local_version;
-#ok($local_version,'local_version()');
-#
-#my ($mirror_version) = $gmod->mirror_version(-site=>'http://caltech.wormbase.org/',
-#					     -cgi => 'version');
-#ok($mirror_version,'mirror_version()');
-
-#TODO: {
-#  local $TODO = 'checking of package versions not yet implemented';
-#  can_ok($gmod,'package_version');
-#}
+# Try restarting acedb - this is done by xinetd or inetd
+# (This should maybe not be a part of the test proper)
+my ($string2,$status2) = $monitor->restart();
+ok($status2,$string2);

@@ -22,26 +22,16 @@ print OUT <<'!NO!SUBS!';
 
 use strict;
 use Getopt::Long;
-use Bio::GMOD::Update;
-#use Bio::GMOD::CheckVersions;
+use Bio::GMOD::Admin::Update;
+use Bio::GMOD::Admin::Monitor;
 
-my (@STEPS,$UPDATE_DATABASES,$UPDATE_SOFTWARE,
-    @EXCLUDE,$VERSION,$SYNC_TO,$FORCE,$HELP,
-    $MYSQL,$ACEDB,$TMP,$PURGE,$FTP_SITE);
-GetOptions(
-	    'sync_to=s'      => \$SYNC_TO, # one of live or dev
-	    'force'          => \$FORCE,
-	    'version=s'      => \$VERSION,
-            'purge'          => \$PURGE,
-            'update_databases' => \$UPDATE_DATABASES,
-            'update_software'  => \$UPDATE_SOFTWARE,
-            'steps=s'        => \@STEPS,
-            'exclude=s'      => \@EXCLUDE,
-            'mysql=s'        => \$MYSQL,
-            'acedb=s'        => \$ACEDB,
-            'tmp=s'          => \$TMP,
-            'ftp_site=s'     => \$FTP_SITE,
-	    'help'           => \$HELP);
+my ($CONFIG,$HELP,$FORCE,$VERSION,@EXCLUDE,%OPTIONS);
+
+GetOptions('config=s'       => \$CONFIG,
+	   'help'           => \$HELP,
+	   'force'          => \$FORCE,
+	   'version=s'      => \$VERSION,
+           'exclude=s'      => \@EXCLUDE);
 
 my $USAGE = <<USAGE;
 This script is a derivative of gmod_update_installation.pl, customized
@@ -57,28 +47,74 @@ USAGE
 
 die $USAGE if $HELP;
 
-$MYSQL       ||= '/usr/local/mysql/data';
-$TMP         ||= '/usr/local/gmod/wormbase/releases';
-$SYNC_TO     ||= 'live';
-$FTP_SITE    ||= 'dev.wormbase.org',
-@STEPS = split(/,/,join(',',@STEPS));
+# Read in values from the configuration file
+if ($CONFIG) {
+  open F,$CONFIG or die "$CONFIG: $!";
+  while (<F>) {
+    chomp;
+    next if /^\#/;
+    next if /^\s/;
+    next unless /^(.+)=(.+)/o;
+    $OPTIONS{lc($1)} = $2;
+  }
+  close F;
+}
 
-push (@STEPS,qw/acedb elegans_gff briggsae_gff blast/) if $UPDATE_DATABASES;
+# System paths
+my $MYSQL            = $OPTIONS{mysql}    || '/usr/local/mysql/data';
+my $ACEDB            = $OPTIONS{acedb}    || '/usr/local/acedb';
+my $TMP              = $OPTIONS{tmp}      || '/usr/local/gmod/wormbase/releases';
+
+# Which site to sync to
+my $SYNC_TO          = $OPTIONS{sync_to}  || 'live';
+my $FTP_SITE         = $OPTIONS{ftp_site} || 'dev.wormbase.org',
+
+# What steps to execute
+my $UPDATE_DATABASES = $OPTIONS{update_databases};
+my $UPDATE_SOFTWARE  = $OPTIONS{update_software};
+my $STEPS            = $OPTIONS{steps};
+
+# Apache monitoring
+my $APACHECTL        = $OPTIONS{apachectl} || '/usr/local/apache/bin/apachectl';
+my $TEST_URL         = $OPTIONS{test_url};
+
+# ACEDB monitoring
+my $ACEPL            = $OPTIONS{acepl}      || '/usr/local/acedb/bin/ace.pl';
+my $ACEDB_USER       = $OPTIONS{acedb_user} || 'admin';
+my $ACEDB_PASS       = $OPTIONS{acedb_pass} || 'ace123';
+
+# Mysqld monitoring
+my $MYSQL_TEST_DB    = $OPTIONS{mysql_test_db};
+my $SAFE_MYSQLD      = $OPTIONS{safe_mysqld};
+my $MYSQL_INITD      = $OPTIONS{mysql_initd};
+
+# Reporting
+my $EMAIL_REPORT     = $OPTIONS{email_report};
+my $LOG_REPORT       = $OPTIONS{log_report};
+my $EMAIL_ON         = $OPTIONS{email_on};
+my $EMAIL_FROM       = $OPTIONS{email_from}    || 'webmaster@wormbase.org';
+my $EMAIL_TO         = $OPTIONS{email_to};
+my $EMAIL_SUBJECT    = $OPTIONS{email_subject} || 'WormBase Monitoring Report';
+
+
+my @STEPS = split(/,/,join(',',$STEPS));
+
+push (@STEPS,qw/acedb elegans_gff briggsae_gff blast clear_cache/) if $UPDATE_DATABASES;
 push (@STEPS,qw/software/) if $UPDATE_SOFTWARE;
 
 # In essence, do $gmod->update() if @STEPS is not provided
 # $gmod->update(-version => $desired_version);
-push (@STEPS,qw/acedb elegans_gff briggsae_gff blast software/)
+push (@STEPS,qw/acedb elegans_gff briggsae_gff blast clear_cache software/)
    if (!$UPDATE_DATABASES && !$UPDATE_SOFTWARE && !@STEPS);
 
 my %steps = map { $_ => 1 } @STEPS;
 
-my $gmod = Bio::GMOD::Update->new(-mod        => 'WormBase',
-                                  -tmp_path   => $TMP,
-			          -mysql_path => $MYSQL,
-			          -acedb_path => $ACEDB
-                                  -ftp_site   => $FTP_SITE,
-                                  );
+my $gmod = Bio::GMOD::Admin::Update->new(-mod        => 'WormBase',
+                                         -tmp_path   => $TMP,
+			                 -mysql_path => $MYSQL,
+			                 -acedb_path => $ACEDB
+                                         -ftp_site   => $FTP_SITE,
+                                         );
 
 # Fetch the current live, local, and development versions of the MOD
 # Each method will return a hash reference with keys of:
@@ -106,7 +142,7 @@ print "----------------------------\n";
 print_keys(\%local);
 
 # The desired version, fetched automatically or provided with --version
-my $desired_version = ($SYNC_TO eq 'dev') ? $dev{version} : $live{version};
+my $desired_version = ($SYNC_TO eq 'development') ? $dev{version} : $live{version};
 $desired_version = $VERSION if $VERSION;
 
 # Which rsync module should we sync to?
@@ -120,7 +156,8 @@ do_rsync() unless (!defined $steps{software});
 
 unless ($FORCE) {
   if ($local{version} eq $desired_version) {
-    print "Your WormBase installation is up-to-date: " . $local{version} . "\n";
+    # monitor_servers();
+    print "Your WormBase installation is up-to-date (currently running " . $local{version} . ")\n";
     exit;
   }
 }
@@ -132,7 +169,11 @@ foreach (@STEPS) {
      my %steps2methods = ( acedb        => 'fetch_acedb',
                              elegans_gff  => 'fetch_elegans_gff',
                              briggsae_gff => 'fetch_briggsae_gff',
-                             blast        => 'fetch_blast_blat');
+                             blast        => 'fetch_blast_blat',
+                             clear_cache  => 'clear_cache',
+                           );
+     # Clear cache should only occur if databases had to be downloaded!
+
      my $method = $steps2methods{$_};
      if ($_ eq 'analyze_logs') {
         $gmod->analyze_logs(-version => $desired_version,
@@ -140,11 +181,12 @@ foreach (@STEPS) {
       } elsif ($method) {
          $gmod->$method(-version => $desired_version);
       } else {}
+
 }
 
 print "Your WormBase installation is up-to-date ($desired_version)!\n";
 
-$gmod->cleanup() if $PURGE;
+$gmod->cleanup() if $OPTIONS{PURGE};
 
 
 
@@ -171,6 +213,36 @@ sub print_keys {
 }
 
 
+
+# Make sure all of the appropriate servers are running
+sub monitor_servers {
+  my $agent  = Bio::GMOD::Admin::Monitor->new(-mod        => 'WormBase',
+                                              -apachectl  => $APACHECTL,
+                                              -test_url   => $TEST_URL,
+                                              -test_url   => $ACEPL,
+                                              -acedb_user => $ACEDB_USER,
+                                              -acedb_pass => $ACEDB_PASS,
+                                              -mysql_test_db => $MYSQL_TEST_DB,
+                                              -mysql_initd   => $MYSQL_INITD,
+                                              -mysqld_safe   => $SAFE_MYSQLD,
+                                              );
+
+  my @tested_components = $agent->monitor();
+
+  # Did any of the components fail initially?
+  my %failed =  map { $_->final_status_string => 1} @tested_components;
+
+  $EMAIL_SUBJECT .= (keys %failed > 1) ? ': FAILED' : ': OK';
+
+  $agent->generate_report(-components    => \@tested_components,
+                          -email_report  => $EMAIL_REPORT,
+                          -email_to      => $EMAIL_TO,
+                          -email_from    => $EMAIL_FROM,
+                          -email_subject => $EMAIL_SUBJECT,
+                          -log_report    => $LOG_REPORT,
+                          );
+}
+
 __END__
 
 
@@ -190,26 +262,21 @@ This script should be executed with superuser privileges.
 
 Available options include (default values in parenthesis):
  Versions and process tasks:
- --sync_to   [live || dev] Sync to the current live or dev version. (live)
  --version   Update to the provided version (if available on the server!)
  --force     [boolean] Force an update to the provided version (false)
- --purge     [boolean] Purge tmp download folder following upgrade (false)
 
- Update tasks:
- --update_databases [boolean] update the databases [true]
- --update_software  [boolean] update the software [true]
- --steps         [list...] Which components of the update to execute (all; see below)
-
-
- Code maintenance:
- --skip_software [boolean] Whether or not to update the software (see below)
  --exclude       [list...] Files, paths, or patterns to exclude from the rsync update (none)
-
- System paths:
- --mysql         Full path to the MySQL data directory (/usr/local/mysql/data)
- --tmp           Full path to the temporary directory to hold downloads (/usr/local/wormbase/tmp)
- --acedb         Full path to the acedb directory (/usr/local/acedb)
  --help          Display this message
+
+In order to avoid a ludicrously long incantation, full options for
+this script should be stored in a configuration file consisting of
+key=value pairs. See the "wormbase_update_defaults.cfg" file that is
+included with this distribution for a full description of all options
+complete with suitable defaults.
+
+To invoke the script:
+
+ gmod_update_installation-wormbase.pl --config /full/path/to/my.config
 
 =head1 Controlling which update steps are executed
 
@@ -226,15 +293,16 @@ the "--steps" paramater.  Available steps are:
   blast         Fetch and install the blast/blat databases
   software      Rsync the software
   analyze_logs  WormBase logs; requires Analog and ReportMagic
+  clear_cache   Clear the wormbase cache at /usr/local/wormbase/cache
 
 The --update_database flag is equivalent to "--steps
-acedb,elegans_gff,briggsae_gff,blast" and the --update_software flag
+acedb,elegans_gff,briggsae_gff,blast,clear_cache" and the --update_software flag
 is equivalent "--steps software".
 
 If the --steps option is not specified or the --update_* options are
 omitted, the following steps will be executed:
 
-   acedb, elegans_gff, briggsae_gff, blast, software
+   acedb, elegans_gff, briggsae_gff, blast, software, clear_cache
 
 =head1 Examples
 

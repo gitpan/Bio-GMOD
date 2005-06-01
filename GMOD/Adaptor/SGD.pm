@@ -1,4 +1,4 @@
-package Bio::GMOD::Adaptor::WormBase;
+package Bio::GMOD::Adaptor::SGD;
 
 use strict;
 use vars qw/@ISA $AUTOLOAD/;
@@ -89,17 +89,13 @@ my %DEFAULTS = (
 
 		# DATA MINING CONSTANTS
 		DATA_MINING_URL    => 'http://aceserver.cshl.org',
-		DATA_MINING_SERVER => 'aceserver.cshl.org',
-#		DATA_MINING_SERVER => 'localhost',
+#		DATA_MINING_SERVER => 'aceserver.cshl.org',
+		DATA_MINING_SERVER => 'localhost',
 		DATA_MINING_PORT   => '2005',
 		
 		# GENERIC QUERIES
-		GENE_FETCH_QUERY  => 'select a,a->Public_name,a->Concise_description from a in class Gene where a->Public_name="%s"',
-		GENE_SEARCH_QUERY => '',
-
-		PROTEIN_FETCH_QUERY  => 'find Protein $s',
-		PROTEIN_SEARCH_QUERY => '',
-
+		GENE_QUERY         => 'select a,a->Public_name,a->Concise_description from a in class Gene where a->Public_name="%s"',
+	
 		# PACKAGE PATHS (LOCAL) (NOT YET SYNCED WITH CGI)
 		# Suitable constants for creating packages
 		# PACKAGE_PATH   => (getpwnam('ftp'))[7]   . '/pub/wormbase/database_tarballs',
@@ -140,27 +136,29 @@ __END__
 
 =head1 NAME
 
-Bio::GMOD::Adaptor::WormBase - Defaults for programmatically interacting with Wormbase
+Bio::GMOD::Adaptor::SGD - Defaults for programmatically interacting with SGD
 
 =head1 SYNPOSIS
 
-  my $adaptor = Bio::GMOD::Adaptor::WormBase->new();
+  my $adaptor = Bio::GMOD::Adaptor::SGD->new();
 
 =head1 DESCRIPTION
 
-Bio::GMOD::Adaptor::WormBase objects are created internally by the new()
+  STUB DOCUMENTATION
+
+Bio::GMOD::Adaptor::SGD objects are created internally by the new()
 method provided by Bio::GMOD::Adaptor.  Adaptor::* objects contain
 appropriate defaults for interacting programmatically with the GMOD of
 choice.
 
-Defaults are read dynamically from the WormBase server at runtime.
-This helps to insulate your scripts from changes in the WormBase
+Defaults are read dynamically from the SGD server at runtime.
+This helps to insulate your scripts from changes in the SGD
 infrastructure.  If using Bio::GMOD offline, defaults will be
 populated from those hard-coded in this adaptor.  You may also supply
 these defaults as hash=>key pairs to the new method.
 
 For descriptions of all currently known parameters, see
-Bio::GMOD::Adaptor::WormBase.pm or the default list maintained at
+Bio::GMOD::Adaptor::SGD.pm or the default list maintained at
 http://dev.wormbase.org/db/gmod/defaults
 
 =head1 BUGS

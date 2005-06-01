@@ -1,7 +1,7 @@
 # This is -*-Perl-*- code
 ## Bio::GMOD Test Harness Script for Modules
 ##
-# $Id: Archive.t,v 1.2 2005/05/31 22:31:58 todd Exp $
+# $Id: QueryWormBase.t,v 1.2 2005/06/01 02:19:26 todd Exp $
 
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl test.t'
@@ -14,7 +14,7 @@ use lib '..','.','./blib/lib';
 my $error;
 
 BEGIN {
-  $MODULE = 'Bio::GMOD::Admin::Archive';
+  $MODULE = 'Bio::GMOD::Query::WormBase';
 
   $error = 0;
   # to handle systems with no installed Test module
@@ -45,4 +45,3 @@ END {
 }
 
 
-# Begin tests

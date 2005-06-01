@@ -22,7 +22,7 @@ print OUT <<'!NO!SUBS!';
 
 use strict;
 use Getopt::Long;
-use Bio::GMOD::Monitor;
+use Bio::GMOD::Admin::Monitor;
 
 my $USAGE = <<USAGE;
 This script provides a convenient mechanism to monitor the status of a
@@ -59,11 +59,11 @@ $MYSQLD ||= '/usr/local/mysql/bin/mysqld_safe';
 
 
 my @options = @ARGV;
-my $agent  = Bio::GMOD::Monitor->new(-mod      => $MOD,
-                                     -mysqld   => $MYSQLD,
-                                     -mysql_db => $MYSQLD_DB,
-                                     -inetd    => $INETD,
-                                     -httpd    => $HTTPD,
+my $agent  = Bio::GMOD::Admin::Monitor->new(-mod      => $MOD,
+                                            -mysqld   => $MYSQLD,
+                                            -mysql_db => $MYSQLD_DB,
+                                            -inetd    => $INETD,
+                                            -httpd    => $HTTPD,
                                     );
 
 $agent->monitor;

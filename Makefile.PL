@@ -3,12 +3,15 @@ use lib './install_util';
 use ExtUtils::MakeMaker;
 use FindBin '$Bin';
 use Cwd;
+
+use IO::File;
+use Config;
 #require 5.005003;
 
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 
-my $VERSION = '0.022';
+my $VERSION = '0.023';
 
 my $working_dir = cwd;
 
@@ -68,6 +71,9 @@ if (-e 'Bio-GMOD.def' && !%OPTIONS) {
   }
 }
 
+# Prompt for which monitor scripts to run
+prompt_for_monitor();
+
 $OPTIONS{BIN}    ||= $OPTIONS{INSTALLSCRIPT} if exists $OPTIONS{INSTALLSCRIPT};
 $OPTIONS{BIN}    ||= '/usr/local/bin';
 
@@ -111,6 +117,8 @@ my @scripts = qw/
   gmod_update_installation-wormbase
   gmod_monitor_installation
   gmod_monitor_installation-wormbase
+  gmod_fetch_genes
+  gmod_standard_urls
   /;
 
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
@@ -130,7 +138,9 @@ WriteMakefile(
 			       'bin/gmod_update_installation.PLS' => 'bin/gmod_update_installation.pl',
 			       'bin/gmod_monitor_installation.PLS' => 'bin/gmod_monitor_installation.pl',
 			       'bin/gmod_monitor_installation-wormbase.PLS' => 'bin/gmod_monitor_installation-wormbase.pl',
-			       'bin/gmod_update_installation-wormbase.PLS' => 'bin/gmod_update_installation-wormbase.pl',
+			       'bin/gmod_update_installation-wormbase.PLS'  => 'bin/gmod_update_installation-wormbase.pl',
+			       'bin/gmod_fetch_genes.PLS'         => 'bin/gmod_fetch_genes.pl',
+			       'bin/gmod_standard_urls.PLS'       => 'bin/gmod_standard_urls.pl',
 			       'install_util/cgi_install.PLS'     => 'install_util/cgi_install.pl',
 			       'cgi-bin/defaults.wormbase.PLS'    => 'cgi-bin/defaults.wormbase',
 			       'cgi-bin/version.wormbase.PLS'     => 'cgi-bin/version.wormbase',
@@ -148,6 +158,70 @@ WriteMakefile(
 		  AUTHOR    => 'Todd Harris (harris@cshl.edu)')
 	       : ()),
 	     );
+
+
+
+sub prompt_for_monitor {
+  print "\n** Bio::GMOD::Monitor Tests ** \n";
+  my $proceed = prompt("Do you want to run the Bio::GMOD::Monitor::* tests (further configuration follows) y/n",'n');
+  if( $proceed =~ /^[yY]/) {
+    prompt_for_monitor_httpd();
+    prompt_for_monitor_acedb();
+    prompt_for_monitor_mysqld();
+  } else {
+    if( -e "t/do_monitor_httpd.tests" ) {
+      unlink "t/do_monitor_httpd.tests";
+    }
+  }
+}
+
+sub prompt_for_monitor_httpd {
+  my $proceed = prompt("Do you want to run the httpd tests (httpd will be restarted; may need su privs) y/n:",'n');
+  if( $proceed =~ /^[yY]/) {
+    my $apachectl = prompt("  Full path to apachectl:",'/usr/local/apache/bin/apachectl');
+    if (open T,">t/do_monitor_httpd.tests") {
+      print T $apachectl,"\n";
+    }
+    close T;
+  } else {
+    if( -e "t/do_monitor_httpd.tests" ) {
+      unlink "t/do_monitor_httpd.tests";
+    }
+  }
+}
+
+sub prompt_for_monitor_acedb {
+  my $proceed = prompt("Do you want to run the acedb tests (acedb will be restarted; may need su privs) y/n:",'n');
+  if( $proceed =~ /^[yY]/) {
+    if (open T,">t/do_monitor_acedb.tests") {
+      print T "do_tests\n";
+    }
+    close T;
+  } else {
+    if( -e "t/do_monitor_acedb.tests" ) {
+      unlink "t/do_monitor_acedb.tests";
+    }
+  }
+}
+
+
+sub prompt_for_monitor_mysqld {
+  my $proceed = prompt("Do you want to run the mysqld tests (mysqld will be restarted; may need su privs) y/n:",'n');
+  if( $proceed =~ /^[yY]/) {
+#    my $mysqld = prompt("  Full path to safe_mysqld:",'/usr/local/mysql/bin/mysqld_safe');
+    my $initd  = prompt("  Full path to mysql init script:",'/etc/rc.d/init.d/mysqld');
+    if (open T,">t/do_monitor_mysqld.tests") {
+#      print T "mysqld_safe=$mysqld\n";
+      print T "mysql_initd=$initd\n";
+    }
+    close T;
+  } else {
+    if( -e "t/do_monitor_mysqld.tests" ) {
+      unlink "t/do_monitor_mysqld.tests";
+    }
+  }
+}
+
 
 sub interpolate {
   my $path = shift;

@@ -53,6 +53,7 @@ DEVELOPMENT_NAME=WormBase development server
 DEVELOPMENT_URL=http://dev.wormbase.org
 DEVELOPMENT_DESCRIPTION=The WormBase semi-public development server
 VERSION_CGI_DEV=http://dev.wormbase.org/db/gmod/version
+STANDARD_URLS_XML=http://www.wormbase.org/standard_urls/standard_urls.xml
 #
 #######################################
 # LOCAL PATHS
@@ -76,10 +77,9 @@ FTP_BASE=/pub/wormbase
 FTP_PATH=/pub/wormbase/mirror/database_tarballs
 # Where to find prepackaged databases
 DATABASE_REPOSITORY=/pub/wormbase/mirror/database_tarballs
-DATABASE_REPOSITORY_STABLE=/pub/wormbase/mirror/database_tarballs/stable
 #
 #######################################
-# TARBALL FILENAMES
+# TARBALL FILENAMES (printf templates)
 #######################################
 #
 ACEDB_TARBALL=elegans_%s.ace.tgz
@@ -103,6 +103,26 @@ BLAST_DISK_SPACE=0.5
 RSYNC_URL=rsync://dev.wormbase.org
 RSYNC_MODULE=wormbase-live
 CVS_ROOT=:pserver:anonymous\@brebiou.cshl.org:/usr/local/cvs
+#
+#######################################
+# DATA MINING CONSTANTS
+#######################################
+#
+# FOR HTTP-BASED REQUESTS
+DATA_MINING_URL=http://aceserver.cshl.org
+# FOR DIRECT DATABASE REQUESTS
+DATA_MINING_SERVER=aceserver.cshl.org
+DATA_MINING_PORT=2005
+
+
+#
+#######################################
+# GENERIC QUERIES
+#######################################
+#
+GENE_FETCH_QUERY=select a,a->Public_name,a->Concise_description from a in class Gene where a->Public_name="%s"
+
+
 # BELOW IS NOT YET SYNC'ed with adaptor
 # FOR BUILDING PACKAGES
 #

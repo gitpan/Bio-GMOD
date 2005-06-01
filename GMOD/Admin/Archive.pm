@@ -8,8 +8,8 @@ WormBase::Archive::Build - Create archives of Wormbase releases
 
 =head1 SYNOPSIS
 
- use Bio::GMOD::Archive;
- my $archive = Bio::GMOD::Archive->new();
+ use Bio::GMOD::Admin::Archive;
+ my $archive = Bio::GMOD::Admin::Archive->new();
 
  $archive->create_archive();
 
@@ -17,7 +17,7 @@ WormBase::Archive::Build - Create archives of Wormbase releases
 
 =over 4
 
-=item Bio::GMOD::Archive->new(@options)
+=item Bio::GMOD::Admin::Archive->new(@options)
 
 Create a new WormBase::Archive object for archiving WormBase releases.
 
@@ -78,7 +78,7 @@ components.
 
 =cut
 
-package Bio::GMOD::Archive;
+package Bio::GMOD::Admin::Archive;
 
 use vars qw/@ISA $VERSION/;
 use Bio::GMOD;

@@ -4,6 +4,7 @@ use strict;
 use Bio::GMOD;
 use Bio::GMOD::Util::Rearrange;
 use LWP::UserAgent;
+use XML::Simple;
 
 use vars qw/@ISA/;
 
@@ -12,7 +13,7 @@ use vars qw/@ISA/;
 sub live_version {
   my ($self,@p) = @_;
   my $adaptor = $self->adaptor;
-  my $response = _check_version_cgi($adaptor->live_url,$adaptor->version_cgi_live);
+  my $response = $self->_check_version($adaptor->live_url,$adaptor->version_live);
   # Save the current live version
   $adaptor->{defaults}->{live_version} = $response->{version};
   return (wantarray ? %$response : $response->{version});
@@ -25,7 +26,7 @@ sub development_version {
   unless ($adaptor->development_url) {
     return (wantarray ? ( site => 'no development server specified' ) : 'no development server specified');
   }
-  my $response = _check_version_cgi($adaptor->development_url,$adaptor->version_cgi_dev);
+  my $response = $self->_check_version($adaptor->development_url,$adaptor->version_dev);
   # Save the current dev version
   $adaptor->{defaults}->{dev_version} = $response->{version};
   return (wantarray ? %$response : $response->{version});
@@ -36,7 +37,7 @@ sub mirror_version {
   my ($site,$cgi) = rearrange([qw/SITE CGI/],@p);
   my $adaptor = $self->adaptor;
   $site =~ s/\/$//;
-  my $response = _check_version_cgi($site,"$site/$cgi");
+  my $response = $self->_check_version($site,"$site/$cgi");
   return (wantarray ? %$response : $response->{version});
 }
 
@@ -77,24 +78,23 @@ sub read_symlink {
 ##################################
 # PRIVATE METHODS
 ##################################
-sub _check_version_cgi {
-  my ($site,$url) = @_;
+sub _check_version {
+  my ($self,$site,$url) = @_;
   # Version script holds a simple cgi that dumps out the
   # title, release date, and version of the database
   $url ||= $site;
+  my $version = $self->biogmod_version;
   my $ua  = LWP::UserAgent->new();
-  $ua->agent('Bio::GMOD::Util::CheckVersions/0.021');
+  $ua->agent("Bio::GMOD::Util::CheckVersions/$version");
   my $request = HTTP::Request->new('GET',$url);
   my $response = $ua->request($request);
   my %response;
   if ($response->is_success) {
     # Parse out the content
     my $content = $response->content;
-    my @lines = split("\n",$content);
-    foreach (@lines) {
-      my ($key,$val) = split("=");
-      chomp $val;
-      $response{$key} = $val;
+    my $parsed = XMLin($content);
+    foreach (keys %{$parsed}) {
+      $response{$_} = $parsed->{$_};
     }
     $response{status} = "SUCCESS";
   } else {
@@ -211,7 +211,7 @@ read_symlink() can be used to fetch the currently installed version.
 
 =over 4
 
-=item _check_version_cgi($site,$path_to_cgi);
+=item $self->_check_version($site,$path_to_cgi);
 
 Check the version at the provided site returning a hash of status,
 title, version, released, and site. This subroutine relies on the

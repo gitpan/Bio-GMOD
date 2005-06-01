@@ -31,7 +31,7 @@ use strict;
 use vars qw($DB);
 $DB = OpenDatabase() || AceError("Couldn't open database.");
 
-print header('text/plain');
+print header('text/xml');
 
 my $to_display = { database => { title=>1,version  =>1,release=>1},
 		   #		code     => { version=>1,build =>1},
@@ -51,9 +51,14 @@ my @package_temp = stat('/usr/local/ftp/pub/wormbase/database_tarballs/' . "$ver
 my $package_modtime = localtime($package_temp[9]);
 
 
-print "title=WormBase, the $title\n";
-print "version=$version\n";
-print "released=$modtime\n";
+print qq{<?xml version="1.0" encoding="UTF-8"?>\n};
+print qq{<!DOCTYPE mod_version SYSTEM "http://www.wormbase.org/dtd/bio-gmod/version.dtd">};
+print "<mod_version>\n";
+print "<name>WormBase</name>\n";
+print "<description>$title</description>\n";
+print "<version>$version</version>\n";
+print "<release_date>$modtime</release_date>\n";
+print "</mod_version>";
 
 exit 0;
 !NO!SUBS!

@@ -1,6 +1,6 @@
 # This is -*-Perl-*- code
 # Bio::GMOD Test Harness Script for Modules
-# $Id: CheckVersions.t,v 1.1 2005/03/07 20:19:47 todd Exp $
+# $Id: CheckVersions.t,v 1.2 2005/06/01 02:19:26 todd Exp $
 
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl test.t'
@@ -26,7 +26,7 @@ BEGIN {
   }
   use Test::More;
 
-  $NUMTESTS = 7;
+  $NUMTESTS = 4;
   plan tests => $NUMTESTS;
 
   # Try to use the module
@@ -55,14 +55,14 @@ ok($live_version,'live_version()');
 my ($dev_version) = $gmod->development_version;
 ok($dev_version,'dev_version()');
 
-my ($local_version) = $gmod->local_version;
-ok($local_version,'local_version()');
+#my ($local_version) = $gmod->local_version;
+#ok($local_version,'local_version()');
+#
+#my ($mirror_version) = $gmod->mirror_version(-site=>'http://caltech.wormbase.org/',
+#					     -cgi => 'version');
+#ok($mirror_version,'mirror_version()');
 
-my ($mirror_version) = $gmod->mirror_version(-site=>'http://caltech.wormbase.org/',
-					     -cgi => 'version');
-ok($mirror_version,'mirror_version()');
-
-TODO: {
-  local $TODO = 'checking of package versions not yet implemented';
-  can_ok($gmod,'package_version');
-}
+#TODO: {
+#  local $TODO = 'checking of package versions not yet implemented';
+#  can_ok($gmod,'package_version');
+#}

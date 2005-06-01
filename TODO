@@ -1,5 +1,10 @@
 announce to GMOD list
 
+Sync adaptors and XML-generating CGI so that the read from a single XML tempalte
+
+Need to cache adaptors:
+	Should be possible to move between classes when necessary
+
 Before release
    Regression tests (Archive.pm, Monitor.pm and subclasses)
    server monitoring (monitor.pm and subclasses)
@@ -9,6 +14,7 @@ Before release
 show progress on downloads (add in file size, too)
 
 
+Write DTD for defaults; convert Adaptor.pm to parsing XML
 
 Future items:
 1. Option to backup software prior to install.

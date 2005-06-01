@@ -1,6 +1,6 @@
 # This is -*-Perl-*- code
 # Bio::GMOD Test Harness Script for Modules
-# $Id: Update.t,v 1.2 2005/03/07 20:19:47 todd Exp $
+# $Id: Update.t,v 1.3 2005/05/31 22:31:58 todd Exp $
 
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl test.t'
@@ -16,7 +16,7 @@ use lib '..','.','./blib/lib';
 my $error;
 
 BEGIN {
-  $MODULE = 'Bio::GMOD::Update';
+  $MODULE = 'Bio::GMOD::Admin::Update';
   $error = 0;
   # to handle systems with no installed Test module
   # we include the t dir (where a copy of Test.pm is located)
@@ -50,7 +50,7 @@ END {
 
 # Test new constructor (GMOD.pm and Adaptor.pm, generic parsing of
 # parameters via Adaptor::parse_params)
-my $gmod  = Bio::GMOD::Update->new(-mod => 'WormBase',-test_param => 'test_value') or die;
+my $gmod  = Bio::GMOD::Admin::Update->new(-mod => 'WormBase',-test_param => 'test_value') or die;
 ok ($gmod,"new constructor: $gmod");
 
 # Test data accessors

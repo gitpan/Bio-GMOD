@@ -1,7 +1,7 @@
 # This is -*-Perl-*- code
 ## Bio::GMOD Test Harness Script for Modules
 ##
-# $Id: UpdateWormBase.t,v 1.1 2005/03/08 16:47:35 todd Exp $
+# $Id: UpdateWormBase.t,v 1.3 2005/05/31 22:31:58 todd Exp $
 
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl test.t'
@@ -14,7 +14,7 @@ use lib '..','.','./blib/lib';
 my $error;
 
 BEGIN {
-  $MODULE = 'Bio::GMOD::Update::WormBase';
+  $MODULE = 'Bio::GMOD::Admin::Update::WormBase';
   # Three tests per
   @METHODS = qw/update fetch_acedb fetch_elegans_gff fetch_briggsae_gff 
     fetch_blast_blat analyze_logs/;

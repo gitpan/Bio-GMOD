@@ -1,9 +1,5 @@
 package Bio::GMOD;
 
-# Perl subroutines for unifying data access across MODs 
-# Includes some maintenance utilites to assist MOD 
-# in packaging and distributing their databases.
-
 use strict;
 use warnings;
 use vars qw/@ISA $VERSION/;
@@ -13,53 +9,60 @@ use Bio::GMOD::Util::Rearrange;
 
 @ISA = qw/Bio::GMOD::Util::Status/;
 
-$VERSION = '0.01';
+# Note: Redudandant versioning with Makefile.PL
+# This is provided here as a convenience for UA identification
+$VERSION = '0.023';
 
 sub new {
   my ($self,@p) = @_;
-  my ($mod,$species,$organism,$overrides) = rearrange([qw/MOD SPECIES ORGANISM/],@p);
-  $self->logit(-msg => "You must provide either a MOD, a species, or an organism.",
-	       -die => 1)
-    unless $mod || $species || $organism;
-  $mod = $self->species2mod($species) if $species;
-  $mod = $self->organism2mod($organism) if $organism;
+  my ($requested_mod,$class,$overrides) = rearrange([qw/MOD CLASS/],@p);
 
-  $self->logit(-msg => "The species $species is not a currently available MOD.",
-	       -die => 1) unless $mod;
+  # Establish a generic GMOD object. This is largely used
+  # for situations when we want to work across all MODs.
+  unless ($requested_mod) {
+    my $this = bless {},$self;
+    return $this;
+  }
 
-  $self->logit(-msg => "The organism $organism is not a currently available MOD.",
+  my $mod  = ($self->supported_mods($requested_mod)) ? $requested_mod : 0;
+  $mod = $self->species2mod($requested_mod)  unless $mod;
+  $mod = $self->organism2mod($requested_mod) unless $mod;
+
+  $self->logit(-msg => "The supplied mod $requested_mod is not a currently available MOD.",
 	       -die => 1) unless $mod;
 
   my $adaptor_class = "Bio::GMOD::Adaptor::$mod";
   eval "require $adaptor_class" or $self->logit(-msg=>"Could not subclass $adaptor_class: $!",-die=>1);
   my $adaptor = $adaptor_class->new($overrides);
   my $name = $adaptor->name;
-
   my $this = {};
 
   # Establish generic subclassing for the various top level classes
   # This assumes that none of these subclasses will require their own new()
   my $subclass = "$self" . "::$name";
-  if ($name && eval "require $subclass" ) {
+  if ($class) {  # Force a specific class
+    bless $this,$class;
+  } elsif ($name && eval "require $subclass" ) {
     bless $this,$subclass;
   } else {
     bless $this,$self;
   }
+
   $this->{adaptor} = $adaptor;
   $this->{mod}     = $mod;
   return $this;
 }
 
-
 sub species2mod {
   my ($self,$provided_species) = @_;
   my %species2mod = (
-		     elegans  => 'WormBase',
-		     briggsae => 'WormBase',
-		     remanei  => 'WormBase',
-		     japonica => 'WormBase',
+		     elegans      => 'WormBase',
+		     briggsae     => 'WormBase',
+		     remanei      => 'WormBase',
+		     japonica     => 'WormBase',
 		     melanogaster => 'FlyBase',
-		     cerevisae => 'SGD',
+		     cerevisae    => 'SGD',
+		     dictyostelium => 'DictyBase',
 		    );
   return ($species2mod{$provided_species}) if defined $species2mod{$provided_species};
 
@@ -73,19 +76,110 @@ sub species2mod {
 sub organism2mod {
   my ($self,$organism) = @_;
   my %organism2mod = (
-		     worm      => 'WormBase',
-		     nematode  => 'WormBase',
-		     fruitfly  => 'FlyBase',
-		     fly       => 'FlyBase',
-		     yeast     => 'SGD',
+		      worm      => 'WormBase',
+		      nematode  => 'WormBase',
+		      fruitfly  => 'FlyBase',
+		      fly       => 'FlyBase',
+		      yeast     => 'SGD',
+		      slime     => 'DictyBase',
 		    );
   return ($organism2mod{$organism}) if defined $organism2mod{$organism};
   return 0;
 }
 
-# Return the appropriate adaptor object
+# ACCESSORS
 sub adaptor { return shift->{adaptor}; }
 sub mod     { return shift->{mod};     }
+sub biogmod_version { return $VERSION };
+
+
+
+#### WORK IN PROGRESS!  HARD HATS REQUIRED! ####
+## This is a stab at implementing a multi-MOD object
+## within the current structure...
+## It's not done yet...
+sub new_alterantive {
+  my ($self,@p) = @_;
+  my ($mod,$class,$overrides) = rearrange([qw/MOD CLASS/],@p);
+
+  # Establish a generic GMOD object. This is largely used
+  # for situations when we want to work across all MODs.
+  my $this = {};
+  unless ($mod) {
+    # Instantiate adaptors to all the MODs
+    bless $this,$self;
+    map { $this->instatiate_adaptor($_,$overrides) } $this->supported_mods();
+    return $this;
+  }
+
+  # If more than a single MOD is supplied, let's assume that
+  # the user wants to do comparative tasks between MODs.
+  # Instatiate adaptors for all the requested MODs
+
+  # If a single MOD is supplied, let's assume the task is something
+  # that applies to a single MOD, like doing updates or archives.
+  if (ref $mod) {
+    map { $this->instatiate_adaptor($_,$overrides) } @$mod;
+    $this = bless {},$self;
+  } else {
+    my $adaptor = $self->instatiate_adaptor($_,$overrides);
+    my $name = $adaptor->name;
+
+    # Establish generic subclassing for the various top level classes
+    # This assumes that none of these subclasses will require their own new()
+    my $subclass = "$self" . "::$name";
+    if ($class) {  # Force a specific class (ooh, when is this used)?
+      bless $this,$class;
+    } elsif ($name && eval "require $subclass" ) {
+      bless $this,$subclass;
+    } else {
+      bless $this,$self;
+    }
+
+    # For ease of access, store this primary MOD as adaptor
+    $this->{adaptor} = $adaptor;
+    $this->{mod} = $mod;
+  }
+  return $this;
+}
+
+# Instatiate a new adaptor if necessary;
+# If not just return an old one.
+sub instatiate_adaptor {
+  my ($self,$requested_mod,$overrides) = @_;
+  my $mod  = ($self->supported_mods($requested_mod)) ? $requested_mod : 0;
+  $mod = $self->species2mod($requested_mod)  unless $mod;
+  $mod = $self->organism2mod($requested_mod) unless $mod;
+  my $adaptor = $self->adaptor($mod);
+  unless ($adaptor) {
+    $self->logit(-msg => "The supplied mod $_ is not a currently available MOD.",
+		 -die => 1) unless $mod;
+    my $adaptor_class = "Bio::GMOD::Adaptor::$mod";
+    eval "require $adaptor_class" or $self->logit(-msg=>"Could not subclass $adaptor_class: $!",-die=>1);
+    $adaptor = $adaptor_class->new($overrides);
+    my $name = $adaptor->name;
+    $self->{adaptors}->{$name} = $adaptor;
+  }
+  return $adaptor;
+}
+
+# Return a list of supported mods
+# These should correspond to symbolic names that are used
+# as module names
+sub supported_mods {
+  my ($self,$mod) = @_;
+  my %mods = (
+	      WormBase => 1,
+	      FlyBase   => 1
+	     );
+  unless ($mod) {
+    return [ keys %mods ];
+  }
+  return 1 if defined $mods{$mod};
+  return 0;
+}
+
+############ END WORK IN PROGRESS ##############
 
 1;
 
@@ -93,62 +187,55 @@ sub mod     { return shift->{mod};     }
 
 =head1 NAME
 
-Bio::GMOD - Unified API across Model Organism Databases
+Bio::GMOD - Unified API for Model Organism Databases
 
 =head1 SYNOPSIS
 
 Check the installed version of a MOD
 
   use Bio::GMOD::Util::CheckVersions.pm
-  my $gmod    = Bio::GMOD::Util::CheckVersions->new(-mod=>'WormBase');
-  my $version = $gmod->live_version;
+  my $mod     = Bio::GMOD::Util::CheckVersions->new(-mod=>'WormBase');
+  my $version = $mod->live_version;
 
 Update a MOD installation
 
   use Bio::GMOD::Update;
-  my $gmod = Bio::GMOD::Update->new(-mod=>'WormBase');
+  my $mod = Bio::GMOD::Update->new(-mod=>'WormBase');
   $gmod->update();
 
-Build archives of MOD releases (coming soon...)
+Fetch a list of genes from a MOD
 
-Do some common datamining tasks (coming soon...)
+  use Bio::GMOD::Query;
+  my $mod = Bio::GMOD::Query->new(-mod=>'WormBase');
+  my @genes = $mod->fetch(-class=>'Gene',-name=>'unc-26');
 
 =head1 DESCRIPTION
 
-Bio::GMOD is a unified API for accessing various Model Organism Databases.
-It is a part of the Generic Model Organism Database project, as well
-as distributed on CPAN.
+Bio::GMOD is a unified API for accessing various Model Organism
+Databases.  It is a part of the Generic Model Organism Database
+project, as well as distributed on CPAN.
 
-MODs are highly curated resources of biological knowledge. MODs
-typically incorporate the typical information found at common
-community sites such as NCBI.  However, they greatly extend this
-information, placing it within a framework of experimental and
-published observations of biological function gleaned from experiments
-in model organisms.
+MODs are highly curated resources of biological data. Although they
+typically incorporate sequence data housed at community repositories
+such as NCBI, they place this information within a framework of
+biological fuction gelaned from the published literature of
+experiments in model organisms.
 
 Given the great proliferation of MODs, cross-site data mining
-strategies have been difficult to implement.  Furthermore, the
-quickly-evolving nature of these projects have made installing a MOD
-locally and keeping it up-to-date a delicate and time-consuming
-experience.
+strategies have been difficult to implement.  Such strategies
+typically require a familiarity with both the underlying data model
+and the historical vocabulary of the model system.
+
+Furthermore, the quickly-evolving nature of these projects have made
+installing a MOD locally and keeping it up-to-date a delicate and
+time-consuming experience.
 
 Bio::GMOD aims to solve these problems by:
 
-   1.  Making MODs easy to install
-   2.  Making MODs easy to upgrade
-   3.  Enabling cross-MOD data mining through a unified API
-   4.  Insulating programmatic end users from model changes
-
-=head1 NOTES FOR DEVELOPERS
-
-Bio::GMOD.pm uses a generically subclass-able architecture that lets
-MOD developers support various features as needed or desired.  For
-example, a developer may wish to override the default methods for
-Update.pm by building a Bio::GMOD::Update::FlyBase package that
-provides an update() method, as well as various supporting methods.
-
-Currently, the only participating MOD is WormBase.  The authors hope
-that this will change in the future!
+   1.  Enabling cross-MOD data mining through a unified API
+   2.  Insulating programmatic end users from model changes
+   3.  Making MODs easy to install
+   4.  Making MODs easy to upgrade
 
 =head1 PUBLIC METHODS
 
@@ -160,7 +247,7 @@ that this will change in the future!
  Status        : public
  Required args : mod || organism || species
  Optional args : hash of system defaults to override
- Returns       : Bio::GMOD::* object as appropriate, with embedded 
+ Returns       : Bio::GMOD::* object as appropriate, with embedded
                  Bio::GMOD::Adaptor::* object
 
 Bio::GMOD->new() is the generic factory new constructor for all of
@@ -169,11 +256,9 @@ elsewhere).  new() will create an object of the appropriate class,
 including dynamic subclassing when necessary, as well as initializing
 an appropriate default Bio::GMOD::Adaptor::* object.
 
- Required options:
- You must provide one of the following three arguments:
+ Options:
  -mod       The symbolic name of the MOD to use (WormBase, FlyBase, SGD, etc)
- -species   A species to use (inc case you don't know the symbolic name)
- -organism  Even more generic, you can also specify an organism (ie 'worm')
+ -class     Force instantiation of a specific class (eg see Bio::GMOD::Monitor)
 
 Any additional options, passed in the named parameter "-name => value"
 style will automatically be considered to be default values specific
@@ -181,6 +266,13 @@ to the MOD adaptor of choice.  These values will be parsed and loaded
 into the Bio::GMOD::Adaptor::"your_mod" object.  A corresponding accessor
 method (ie $adaptor->name) will be generated.  See Bio::GMOD::Adaptor for
 additional details.
+
+if "--mod" is not specified, adaptors to all available MODs will be
+instantiated.  Note that this probably does not make sense for classes
+like Update::*.  It does provide a convenient mechanism to iteract
+with all MODs without too much extra coding.  You can also specify a
+subset of MODs.  Specifying a single MOD has special behavior fo use
+in things like updates.
 
 =item $self->species2mod($species);
 
@@ -214,6 +306,17 @@ the most appropriate hosting MOD.
   # $mod contains 'WormBase'
 
 =back
+
+=head1 NOTES FOR DEVELOPERS
+
+Bio::GMOD.pm uses a generically subclass-able architecture that lets
+MOD developers support various features as needed or desired.  For
+example, a developer may wish to override the default methods for
+Update.pm by building a Bio::GMOD::Update::FlyBase package that
+provides an update() method, as well as various supporting methods.
+
+Currently, the only participating MOD is WormBase.  The author hopes
+that this will change in the future!
 
 =head1 BUGS
 

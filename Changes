@@ -1,5 +1,16 @@
 Revision history for Perl extension WormBase.
 
+0.023 Tues May 31 20:20:02 2005
+  - Added purging of WormBase cache to Update::WormBase and update script
+  - Added Monitor::*: httpd.pm, acedb.pm, blat.pm, mysqld.pm
+  - Added Monitor::WormBase.pm, wrapper around server monitoring for WormBase
+  - Overhauled gmod_update_installation-wormbase.PLS to use an external config
+    file instead of hundreds of options.
+  - Moved the Update, Monitor, and Archive classes to Bio::GMOD::Admin::*
+  - version CGI now uses XML instead of plain text
+  - added some DTDs for version and defaults
+  - New module to interface with the GMOD StandardURLs protocol
+
 0.022 Thur March 16 07:41:02 2005
   - Added install_util dir to manifest!
 

@@ -22,29 +22,27 @@ print OUT <<'!NO!SUBS!';
 
 use strict;
 use Getopt::Long;
-use Bio::GMOD::Monitor;
+use Bio::GMOD::Admin::Monitor;
 
 my $USAGE = <<USAGE;
 This script provides a convenient mechanism to monitor the status of a
 given MOD installation. It should be executed with superuser
 privileges.
 
-
-  % gmod_monitor_installation.pl [options]
+  % gmod_monitor_installation-wormbase.pl [options]
 
 For a full description of options, see:
 
-  % perldoc gmod_monitor_installation.pl
+  % perldoc gmod_monitor_installation-wormbase.pl
 
 USAGE
 
-my ($MOD,$HELP,$MYSQLD,$MYSQL_DB,
+my ($HELP,$MYSQLD,$MYSQL_DB,
     $HTTPD,$SITE,
     $INETD,
     $EMAIL_REPORT,$LOG_REPORT,
     $EMAIL_TO_OK,$EMAIL_TO_WARN,$EMAIL_FROM,$EMAIL_SUBJECT);
-GetOptions( 'mod=s'       => \$MOD,
-	    'help'        => \$HELP,
+GetOptions( 'help'        => \$HELP,
             'mysqld=s'    => \$MYSQLD,
             'mysql_db=s'  => \$MYSQL_DB,
             'inetd=s'     => \$INETD,
@@ -53,13 +51,12 @@ GetOptions( 'mod=s'       => \$MOD,
             'httpd=s'     => \$HTTPD,
             'site=s'      => \$SITE,
 
-
-            'email_report=s' => \$EMAIL_REPORT,
+            'email_report=s'    => \$EMAIL_REPORT,
             'email_to_ok=s'     => \$EMAIL_TO_OK,
             'email_to_warn=s'   => \$EMAIL_TO_WARN,
-            'email_from=s'   => \$EMAIL_FROM,
-            'email_subject=s'=> \$EMAIL_SUBJECT,
-            'log_report=s'   => \$LOG_REPORT,
+            'email_from=s'      => \$EMAIL_FROM,
+            'email_subject=s'   => \$EMAIL_SUBJECT,
+            'log_report=s'      => \$LOG_REPORT,
 );
 
 die $USAGE if ($HELP || !$MOD);
@@ -67,7 +64,7 @@ die $USAGE if ($HELP || !$MOD);
 # Suitable defaults for a typical WormBase installation
 
 # Non-init systems
-$MYSQLD ||= '/usr/local/mysql/bin/mysqld_safe';
+$MYSQLD   ||= '/usr/local/mysql/bin/mysqld_safe';
 # $MYSQLD ||= '/usr/bin/safe_mysqld';
 
 # Alternatively, provide path to inetd
@@ -84,13 +81,13 @@ $LOG_REPORT    ||= 'all';
 
 # These values need to be passed to new in order to
 # become autoloaded default values of the Adaptor
-my $agent  = Bio::GMOD::Monitor->new(-mod      => $MOD,
-                                     -mysqld   => $MYSQLD,
-                                     -mysql_db => $MYSQL_DB,
-                                     -inetd    => $INETD,
-                                     -httpd    => $HTTPD,
-                                     -site     => $SITE,
-                                    );
+my $agent  = Bio::GMOD::Admin::Monitor->new(-mod      => $MOD,
+                                            -mysqld   => $MYSQLD,
+                                            -mysql_db => $MYSQL_DB,
+                                            -inetd    => $INETD,
+                                            -httpd    => $HTTPD,
+                                            -site     => $SITE,
+                                            );
 
 my @tested_components = $agent->monitor();
 

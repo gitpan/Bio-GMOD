@@ -4,12 +4,12 @@
 
 =head1 NAME
 
-Bio::GMOD::Archive::WormBase - archiving of WormBase releases
+Bio::GMOD::Admin::Archive::WormBase - archiving of WormBase releases
 
 =head1 SYNOPSIS
 
- use Bio::GMOD::Archive;
- my $archive = Bio::GMOD::Archive->new(-mod=>'WormBase');
+ use Bio::GMOD::Admin::Archive;
+ my $archive = Bio::GMOD::Admin::Archive->new(-mod=>'WormBase');
 
  $archive->create_archive();
 
@@ -17,7 +17,7 @@ Bio::GMOD::Archive::WormBase - archiving of WormBase releases
 
 =over 4
 
-=item Bio::GMOD::Archive->new(@options)
+=item Bio::GMOD::ADmin::Archive->new(@options)
 
 Create a new WormBase::Archive object for archiving WormBase releases.
 
@@ -78,7 +78,7 @@ components.
 
 =cut
 
-package Bio::GMOD::Archive;
+package Bio::GMOD::Admin::Archive;
 
 use vars qw/@ISA $VERSION/;
 use Bio::GMOD;

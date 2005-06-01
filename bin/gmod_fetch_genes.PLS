@@ -21,92 +21,30 @@ $Config{startperl}
 print OUT <<'!NO!SUBS!';
 
 use strict;
-use Getopt::Long;
-use Bio::GMOD::Admin::Update;
+use Bio::GMOD::Query;
 
-my $USAGE = <<USAGE;
-This script provides a convenient mechanism to maintain a MOD
-installation.  It should be excecuted with super user privileges.
+$|++;
 
-  % gmod_update_installation.pl [options]
+my $mod  = shift;
+my $gene = shift;
 
-For a full description of options, see:
+$mod && $gene or die "Usage: gmod_query_gene.pl [mod] eg WormBase, FlyBase, SGD) [gene] (e.g. unc-26)";
 
-  % perldoc gmod_update_installation.pl
+my $gmod = Bio::GMOD::Query->new(-mod=>$mod);
+my $genes = $gmod->fetch(-class=>'gene',-name=>$gene);
 
-USAGE
-
-my ($MOD,$VERSION,$SYNC_TO,$FORCE,$HELP,$TMP,$PURGE);
-GetOptions( 'mod=s'          => \$MOD,
-	    'version=s'    => \$VERSION,
-	    'sync_to=s'    => \$SYNC_TO, # one of live or dev
-	    'force'        => \$FORCE,
-            'purge'        => \$PURGE,
-            'tmp=s'        => \$TMP,
-	    'help'         => \$HELP);
-
-die $USAGE if ($HELP || !$MOD);
-
-my @options = @ARGV;
-my $gmod  = Bio::GMOD::Admin::Update->new(-mod => $MOD,@options);
-
-# Fetch the current live, local, and development versions of the MOD
-# Each method will return a hash reference with keys of:
-#      status, url, title, version, versiond
-my %live  = $gmod->live_version();
-my %dev   = $gmod->development_version();
-my %local = $gmod->local_version();
-
-if (keys %live < 1) {
-  print "WARNING: Could not check the live versions.  You must be online to update your $MOD installation.\n";
-  die;
+print scalar @$genes . " entries found for $gene\n";
+foreach (@$genes) {
+  print  join("\t",@{$_}),"\n";
 }
-
-print "LIVE SITE ($live{url})\n";
-print "----------------------------\n";
-print_keys(\%live);
-
-print "DEV SITE ($dev{url})\n";
-print "----------------------------\n";
-print_keys(\%dev);
-
-print "LOCAL INSTALLATION\n";
-print "----------------------------\n";
-print_keys(\%local);
-
-# The desired version, fetched automatically or provided with --version
-my $desired_version = ($SYNC_TO eq 'dev') ? $dev{version} : $live{version};
-$desired_version = $VERSION if $VERSION;
-
-unless ($FORCE) {
-  if ($local{version} eq $desired_version) {
-    print "Your $MOD installation is up-to-date: " . $local{version};
-    exit;
-  }
-}
-
-$gmod->update(-version => $desired_version,@options);
-
-$gmod->cleanup() if $PURGE;
-
-
-
-sub print_keys {
-  my $hash = shift;
-  print "Status      : $hash->{status}\n";
-  print "Title       : $hash->{title}\n";
-  print "Version     : $hash->{version}\n";
-  print "Released    : $hash->{released}\n\n";
-}
-
 
 __END__
-
 
 =pod
 
 =head1 NAME
 
+gmod_fetch_features.pl - 
 gmod_update_installation.pl - Maintain a MOD installation
 
 =head1 USAGE

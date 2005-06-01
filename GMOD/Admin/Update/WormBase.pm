@@ -1,11 +1,16 @@
-package Bio::GMOD::Update::WormBase;
+package Bio::GMOD::Admin::Update::WormBase;
 
 use strict;
 use vars qw/@ISA/;
-use Bio::GMOD::Update;
+use Bio::GMOD::Admin::Update;
+use Bio::GMOD::Admin::Monitor::httpd;
+use Bio::GMOD::Admin::Monitor::acedb;
+use Bio::GMOD::Admin::Monitor::mysqld;
 use Bio::GMOD::Util::Rearrange;
+use File::Path 'rmtree';
+#use Bio::GMOD::Admin::Monitor::blat;
 
-@ISA = qw/Bio::GMOD::Update/;
+@ISA = qw/Bio::GMOD::Admin::Update/;
 
 ################################################
 #  WormBase-specific update methods
@@ -28,7 +33,6 @@ sub update {
   $self->rsync_software(-module       => $rsync_module,
                         -install_root => '/usr/local/wormbase/');
 }
-
 
 sub fetch_acedb {
   my ($self,@p) = @_;
@@ -68,12 +72,13 @@ sub fetch_acedb {
 
     # Adjust permissions
     my $command = <<END;
-chown -R acedb $acedb_path
-chgrp -R acedb $acedb_path
-chmod 2775 $acedb_path
+chown -R acedb $acedb_path/elegans*
+chgrp -R acedb $acedb_path/elegans*
+chmod 2775 $acedb_path/elegans*
 chown acedb $acedb_path/bin/*
 chgrp acedb $acedb_path/bin/*
 END
+
 
     $self->test_for_error(system($command),"Fetching and installing acedb for WormBase");
   }
@@ -82,7 +87,6 @@ END
 
 sub fetch_elegans_gff {
   my ($self,@p) = @_;
-
   my $adaptor = $self->adaptor;
   $adaptor->parse_params(@p);
 
@@ -130,7 +134,6 @@ END
 
 sub fetch_blast_blat {
   my ($self,@p) = @_;
-
   my $adaptor = $self->adaptor;
   $adaptor->parse_params(@p);
 
@@ -174,8 +177,9 @@ cd blast/
 ln -s blast_$version blast
 
 # Fix permissions as necessary
-chgrp -R wormbase /usr/local/blat
-chmod 2775 /usr/local/blat
+chgrp -R wormbase /usr/local/wormbase/blat
+chmod 2775 /usr/local/wormbase/blat
+
 END
 
   $self->test_for_error(system($command),"Fetching and installing blast databases for WormBase");
@@ -185,7 +189,6 @@ END
 
 sub fetch_briggsae_gff {
   my ($self,@p) = @_;
-
   my $adaptor = $self->adaptor;
   $adaptor->parse_params(@p);
 
@@ -305,33 +308,55 @@ sub analyze_logs {
 #  $self->test_for_error(system($command),"Adjusting permissions for MySQL databases");
 #}
 
+
+# clear the cache
+sub clear_cache {
+  my ($self,@p) = @_;
+  my ($cache) = rearrange([qw/CACHE/],@p);
+  $cache ||= '/usr/local/wormbase/cache';
+  chdir $cache;
+  my @remove;
+  opendir(D,'.') or $self->logit(-msg => "Couldn't open $cache: $!",die=>1);
+  while (my $f = readdir(D)) {
+    next unless -d $f;
+    next if $f eq 'README';
+    next if $f eq 'CVS';
+    next if $f =~ /^\./;
+    push @remove,$f;
+  }
+  closedir D;
+  rmtree(\@remove,0,0);
+}
+
+
+
 __END__
 
 =pod
 
 =head1 NAME
 
-Bio::GMOD::Update::WormBase - Methods for updating a WormBase installation
+Bio::GMOD::Admin::Update::WormBase - Methods for updating a WormBase installation
 
 =head1 SYNOPSIS
 
   # Update your WormBase installation
-  use Bio::GMOD::Update;
-  my $mod = Bio::GMOD::Update->new(-mod => 'WormBase');
+  use Bio::GMOD::Admin::Update;
+  my $mod = Bio::GMOD::Admin::Update->new(-mod => 'WormBase');
   $mod->update(-version => 'WS136');
 
 =head1 DESCRIPTION
 
-Bio::GMOD::Update::WormBase contains subroutines that simplify the
+Bio::GMOD::Admin::Update::WormBase contains subroutines that simplify the
 maintenance of a WormBase installation.  You will not normally need to
-create a Bio::GMOD::Update::WormBase object manually - these will be
-created automatically by Bio::GMOD::Update.
+create a Bio::GMOD::Admin::Update::WormBase object manually - these will be
+created automatically by Bio::GMOD::Admin::Update.
 
 =head1 PUBLIC METHODS
 
 =over 4
 
-=item $mod = Bio::GMOD::Update->new()
+=item $mod = Bio::GMOD::Admin::Update->new()
 
 The generic new() method is provided by Bio::GMOD.pm.  new() provides
 the ability to override system installation paths.  If you have a
@@ -355,7 +380,7 @@ update() is provided as convenience, wrapping individual methods for
 downloading prepackaged databases necessary for a MOD installation.
 Typically, update() is provided by the MOD adaptor of interest.
 
-For the Bio::GMOD::Update::WormBase module, update() performs the
+For the Bio::GMOD::Admin::Update::WormBase module, update() performs the
 following steps:
 
    - fetch a tarball of the acedb database
@@ -417,7 +442,7 @@ None reported.
 
 =head1 SEE ALSO
 
-L<Bio::GMOD>, L<Bio::GMOD::Update>, L<Bio::GMOD::Adaptor>
+L<Bio::GMOD>, L<Bio::GMOD::Admin::Update>, L<Bio::GMOD::Adaptor>
 
 =head1 AUTHOR
 

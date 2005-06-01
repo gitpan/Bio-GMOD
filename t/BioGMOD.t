@@ -1,7 +1,7 @@
 # This is -*-Perl-*- code
 ## Bio::GMOD Test Harness Script for Modules
 ##
-# $Id: BioGMOD.t,v 1.2 2005/03/07 20:19:47 todd Exp $
+# $Id: BioGMOD.t,v 1.3 2005/05/16 20:10:47 todd Exp $
 
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl test.t'
@@ -63,7 +63,7 @@ foreach (@MODS) {
 
 # Test new via organism
 foreach (@ORGANISMS) {
-  my $gmod  = Bio::GMOD->new(-organism => $_);
+  my $gmod  = Bio::GMOD->new(-mod => $_);
   ok($gmod,"new constructor via organism: $_");
 
   # Test data accessors
@@ -73,7 +73,7 @@ foreach (@ORGANISMS) {
 
 # Test new via organism
 foreach (@SPECIES) {
-  my $gmod  = Bio::GMOD->new(-species => $_);
+  my $gmod  = Bio::GMOD->new(-mod => $_);
   ok($gmod,"new constructor via species: $_");
 
   # Test data accessors

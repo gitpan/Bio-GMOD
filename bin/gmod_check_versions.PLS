@@ -47,7 +47,7 @@ print_keys(\%local);
 sub print_keys {
   my $hash = shift;
   print "Status      : $hash->{status}\n";
-  print "Title       : $hash->{title}\n";
+  print "Title       : $hash->{name}\n";
   print "Version     : $hash->{version}\n";
   print "Released    : $hash->{released}\n\n";
 }

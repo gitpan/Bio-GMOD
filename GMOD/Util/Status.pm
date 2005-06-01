@@ -29,7 +29,7 @@ sub logit {
   $msg =~ s/\n$//;
   print STDERR "[$date] $msg...\n";
   die if $die;
-  my $adaptor = $self->adaptor;
+  # my $adaptor = $self->adaptor;
   # $self->gui_messages($msg) if $adaptor->gui_messages;
 }
 

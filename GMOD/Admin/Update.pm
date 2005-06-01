@@ -1,4 +1,4 @@
-package Bio::GMOD::Update;
+package Bio::GMOD::Admin::Update;
 
 use strict;
 use vars qw/@ISA $AUTOLOAD/;
@@ -10,14 +10,12 @@ use Bio::GMOD::Util::Rearrange;
 
 @ISA = qw/Bio::GMOD Bio::GMOD::Util::CheckVersions/;
 
-# Currently, there is no generic update method.  Bio::GMOD::Update
+# Currently, there is no generic update method.  Bio::GMOD::Admin::Update
 # must be subclassed for your particular MOD
-
 sub update {
   my $self = shift;
   my $adaptor = $self->adaptor;
   my $name = $adaptor->name;
-
   $self->logit("$name does not currently support automated updates at this time. Please ask the administrators of $name to add this functionality.",
 	       -die => 1);
 }
@@ -26,7 +24,8 @@ sub update {
 # MORE TWEAKS NEEDED - configuration, verbosity, etc
 sub mirror {
   my ($self,@p) = @_;
-  my ($remote_path,$local_path,$is_optional) = rearrange([qw/REMOTE_PATH LOCAL_PATH IS_OPTIONAL/],@p);
+  my ($remote_path,$local_path,$is_optional)
+    = rearrange([qw/REMOTE_PATH LOCAL_PATH IS_OPTIONAL/],@p);
   my $adaptor = $self->adaptor;
   $local_path ||= $adaptor->tmp_path;
   $self->logit(-msg => "Must supply a local path in which to download files",
@@ -143,7 +142,7 @@ END
 }
 
 sub cleanup {
-  my $self = shift;
+  my ($self,@p) = @_;
   my $tmp = $self->tmp_path;
   $self->logit(-msg => "Cleaning up $tmp");
   system("rm -rf $tmp/*");
@@ -157,31 +156,31 @@ __END__
 
 =head1 NAME
 
-Bio::GMOD::Update - Generics methods for updating a Bio::GMOD installation
+Bio::GMOD::Admin::Update - Generics methods for updating a Bio::GMOD installation
 
 =head1 SYNOPSIS
 
   # Update your Bio::GMOD installation
-  use Bio::GMOD::Update;
-  my $mod = Bio::GMOD::Update->new(-mod => 'WormBase');
+  use Bio::GMOD::Admin::Update;
+  my $mod = Bio::GMOD::Admin::Update->new(-mod => 'WormBase');
   $mod->update(-version => 'WS136');
 
 =head1 DESCRIPTION
 
-Bio::GMOD::Update contains subroutines that simplify the maintenance
+Bio::GMOD::Admin::Update contains subroutines that simplify the maintenance
 of a Bio::GMOD installation.
 
 =head1 PUBLIC METHODS
 
 =over 4
 
-=item $mod = Bio::GMOD::Update->new()
+=item $mod = Bio::GMOD::Admin::Update->new()
 
 The generic new() method is provided by Bio::GMOD.pm.  new() provides
 the ability to override system installation paths.  If you have a
 default installation for your MOD of interest, this should not be
-necessary. You will not normally interact with Bio::GMOD::Update
-objects, but instead with Bio::GMOD::Update::"MOD" objects.
+necessary. You will not normally interact with Bio::GMOD::Admin::Update
+objects, but instead with Bio::GMOD::Admin::Update::"MOD" objects.
 
 See Bio::GMOD.pm and Bio::GMOD::Adaptor::* for a full description of
 all default paths for your MOD of interest.
@@ -189,11 +188,11 @@ all default paths for your MOD of interest.
 =item $mod->update(@options)
 
 update() is a wrapper method that should be overriden by
-Bio::GMOD::Update::"MOD" update().  The update() method should execute
+Bio::GMOD::Admin::Update::"MOD" update().  The update() method should execute
 all steps necessary for a basic installation, returing an array of all
 components installed.
 
-See Bio::GMOD::Update::WormBase for an example subclass.  See
+See Bio::GMOD::Admin::Update::WormBase for an example subclass.  See
 bin/gmod_update_installation-wormbase.pl for a more detailed script
 that relies on this subclass.
 
@@ -251,7 +250,7 @@ the mount point and available space for the provided path.
 =item $mod->cleanup()
 
 Delete the contents of the temporary directory following an update.
-See Bio::GMOD::Update::* for how this method might affect you!
+See Bio::GMOD::Admin::Update::* for how this method might affect you!
 
 =back
 
