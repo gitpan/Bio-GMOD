@@ -1,12 +1,12 @@
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         Bio-GMOD
-version:      0.023
+version:      0.024
 version_from: 
 installdirs:  site
 requires:
-    LWP::UserAgent:                2.023
-    Net::SMTP:                     2.26
     MIME::Lite:                    3.01
+    Net::SMTP:                     2.26
+    LWP::UserAgent:                2.023
 
 distribution_type: module
 generated_by: ExtUtils::MakeMaker version 6.12

@@ -11,7 +11,7 @@ use Config;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 
-my $VERSION = '0.023';
+my $VERSION = '0.024';
 
 my $working_dir = cwd;
 

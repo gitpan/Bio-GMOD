@@ -39,7 +39,6 @@ sub releases {
     my @releases = _fetch_releases($species);
     foreach (@releases) {
       my $available = $_->{available};
-#      next unless ($available;
       next if ($available eq 'yes' && $status eq 'unavailable');
       next if ($available ne 'yes' && $status eq 'available');
       if ($expanded) {

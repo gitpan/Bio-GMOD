@@ -1,5 +1,8 @@
 Revision history for Perl extension WormBase.
 
+0.024 Sat Jun 4 13:11:15 2005
+  - Fixed a small glitch that was requiring a module not yet built!
+
 0.023 Tues May 31 20:20:02 2005
   - Added purging of WormBase cache to Update::WormBase and update script
   - Added Monitor::*: httpd.pm, acedb.pm, blat.pm, mysqld.pm

@@ -23,7 +23,7 @@ print OUT <<'!NO!SUBS!';
 use strict;
 use Getopt::Long;
 use Bio::GMOD::Admin::Update;
-use Bio::GMOD::Admin::Monitor;
+# use Bio::GMOD::Admin::Monitor;
 
 my ($CONFIG,$HELP,$FORCE,$VERSION,@EXCLUDE,%OPTIONS);
 
@@ -213,35 +213,35 @@ sub print_keys {
 }
 
 
-
+# Not yet implemented
 # Make sure all of the appropriate servers are running
-sub monitor_servers {
-  my $agent  = Bio::GMOD::Admin::Monitor->new(-mod        => 'WormBase',
-                                              -apachectl  => $APACHECTL,
-                                              -test_url   => $TEST_URL,
-                                              -test_url   => $ACEPL,
-                                              -acedb_user => $ACEDB_USER,
-                                              -acedb_pass => $ACEDB_PASS,
-                                              -mysql_test_db => $MYSQL_TEST_DB,
-                                              -mysql_initd   => $MYSQL_INITD,
-                                              -mysqld_safe   => $SAFE_MYSQLD,
-                                              );
-
-  my @tested_components = $agent->monitor();
-
-  # Did any of the components fail initially?
-  my %failed =  map { $_->final_status_string => 1} @tested_components;
-
-  $EMAIL_SUBJECT .= (keys %failed > 1) ? ': FAILED' : ': OK';
-
-  $agent->generate_report(-components    => \@tested_components,
-                          -email_report  => $EMAIL_REPORT,
-                          -email_to      => $EMAIL_TO,
-                          -email_from    => $EMAIL_FROM,
-                          -email_subject => $EMAIL_SUBJECT,
-                          -log_report    => $LOG_REPORT,
-                          );
-}
+#sub monitor_servers {
+#  my $agent  = Bio::GMOD::Admin::Monitor->new(-mod        => 'WormBase',
+#                                              -apachectl  => $APACHECTL,
+#                                              -test_url   => $TEST_URL,
+#                                              -test_url   => $ACEPL,
+#                                              -acedb_user => $ACEDB_USER,
+#                                              -acedb_pass => $ACEDB_PASS,
+#                                              -mysql_test_db => $MYSQL_TEST_DB,
+#                                              -mysql_initd   => $MYSQL_INITD,
+#                                              -mysqld_safe   => $SAFE_MYSQLD,
+#                                              );
+#
+#  my @tested_components = $agent->monitor();
+#
+#  # Did any of the components fail initially?
+#  my %failed =  map { $_->final_status_string => 1} @tested_components;
+#
+#  $EMAIL_SUBJECT .= (keys %failed > 1) ? ': FAILED' : ': OK';
+#
+#  $agent->generate_report(-components    => \@tested_components,
+#                          -email_report  => $EMAIL_REPORT,
+#                          -email_to      => $EMAIL_TO,
+#                          -email_from    => $EMAIL_FROM,
+#                          -email_subject => $EMAIL_SUBJECT,
+#                          -log_report    => $LOG_REPORT,
+#                          );
+#}
 
 __END__
 

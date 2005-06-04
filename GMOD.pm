@@ -11,7 +11,7 @@ use Bio::GMOD::Util::Rearrange;
 
 # Note: Redudandant versioning with Makefile.PL
 # This is provided here as a convenience for UA identification
-$VERSION = '0.023';
+$VERSION = '0.024';
 
 sub new {
   my ($self,@p) = @_;
