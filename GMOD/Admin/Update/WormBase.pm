@@ -37,6 +37,9 @@ sub update {
 
 sub fetch_acedb {
   my ($self,@p) = @_;
+  $self->logit(-msg      => 'Fetching and installing Acedb',
+	       -emphasis => 1);
+
   my $adaptor = $self->adaptor;
   $adaptor->parse_params(@p);
 
@@ -67,7 +70,7 @@ sub fetch_acedb {
   unless ($adaptor->dl_only) {
     $self->logit(-msg => "Unpacking and installing $acedb");
     chdir($acedb_path);
-    system("gunzip -c $local_path/$acedb | tar xf -");
+    system("gunzip -c $local_path/$acedb | tar -x --no-same-owner -f -");
     unlink($acedb_path . '/elegans');
     symlink("elegans_$version",'elegans');
 
@@ -76,10 +79,9 @@ sub fetch_acedb {
 chown -R acedb $acedb_path/elegans*
 chgrp -R acedb $acedb_path/elegans*
 chmod 2775 $acedb_path/elegans*
-chown acedb $acedb_path/bin/*
-chgrp acedb $acedb_path/bin/*
+##chown acedb $acedb_path/bin/*
+##chgrp acedb $acedb_path/bin/*
 END
-
 
     $self->test_for_error(system($command),"Fetching and installing acedb for WormBase");
   }
@@ -88,6 +90,8 @@ END
 
 sub fetch_elegans_gff {
   my ($self,@p) = @_;
+  $self->logit(-msg=>'Fetching and installing C. elegans GFF database',
+	       -emphasis => 1);
   my $adaptor = $self->adaptor;
   $adaptor->parse_params(@p);
 
@@ -120,7 +124,7 @@ sub fetch_elegans_gff {
     my $command = <<END;
 cd $mysql_path
 mv $mysql_path/elegans $mysql_path/elegans.bak
-gunzip -c $local_path/$gff | tar xf -
+gunzip -c $local_path/$gff | tar -x --no-same-owner -f -
 rm -rf $mysql_path/elegans.bak
 rm -rf $mysql_path/elegans_pmap.bak
 chgrp -R mysql $mysql_path/elegans_pmap
@@ -135,6 +139,8 @@ END
 
 sub fetch_blast_blat {
   my ($self,@p) = @_;
+  $self->logit(-msg=>'Fetching and installing BLAST databases',
+	       -emphasis => 1);
   my $adaptor = $self->adaptor;
   $adaptor->parse_params(@p);
 
@@ -171,7 +177,7 @@ mv blat/* blat.previous/.
 
 # Create the blast directory
 mkdir blast
-gunzip -c $local_path/$blast | tar xf -
+gunzip -c $local_path/$blast | tar -x --no-same-owner -f -
 mv blast_$version blast/.
 rm -f blast/blast
 cd blast/
@@ -190,6 +196,8 @@ END
 
 sub fetch_briggsae_gff {
   my ($self,@p) = @_;
+  $self->logit(-msg=>'Fetching and installing C. briggsae GFF database',
+	       -emphasis => 1);
   my $adaptor = $self->adaptor;
   $adaptor->parse_params(@p);
 
@@ -231,7 +239,7 @@ sub fetch_briggsae_gff {
     my $command = <<END;
 cd $mysql_path
 mv $mysql_path/briggsae $mysql_path/briggsae.bak
-gunzip -c $local_path/$gff | tar xf -
+gunzip -c $local_path/$gff | tar -x --no-same-owner -f -
 rm -rf $mysql_path/briggsae.bak
 chgrp -R mysql $mysql_path/briggsae
 chown -R mysql $mysql_path/briggsae
@@ -282,6 +290,9 @@ sub analyze_logs {
   $site    ||= `hostname`;
   return unless $version;
 
+  $self->logit(-msg      => 'Analyzing server logs',
+	       -emphasis => 1);
+
   $version    =~ /WS(.*)/;
   my $old_version = 'WS' . ($version - 1);
   my $result = system("/usr/local/wormbase/util/log_analysis/analyze_logs $old_version $site");
@@ -314,10 +325,13 @@ sub analyze_logs {
 sub clear_cache {
   my ($self,@p) = @_;
   my ($cache) = rearrange([qw/CACHE/],@p);
+  $self->logit(-msg      => 'Clearing disk cache',
+	       -emphasis => 1);
+
   $cache ||= '/usr/local/wormbase/cache';
   chdir $cache;
   my @remove;
-  opendir(D,'.') or $self->logit(-msg => "Couldn't open $cache: $!",die=>1);
+  opendir(D,$cache) or $self->logit(-msg => "Couldn't open $cache: $!",die=>1);
   while (my $f = readdir(D)) {
     next unless -d $f;
     next if $f eq 'README';

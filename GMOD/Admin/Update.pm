@@ -59,6 +59,7 @@ sub mirror {
 sub rsync_software {
   my ($self,@p) = @_;
   my ($rsync_module,$exclude,$install_root) = rearrange([qw/MODULE EXCLUDE INSTALL_ROOT/],@p);
+  $self->logit(-msg=>"Rsync'ing software",-emphasis=>1);
   my $adaptor     = $self->adaptor;
   $adaptor->parse_params(@p);
   $install_root ||= $adaptor->install_root;
@@ -68,7 +69,7 @@ sub rsync_software {
   $rsync_module ||= $adaptor->rsync_module;
   my $rsync_path   = $rsync_url . ($rsync_module ? "/$rsync_module" : '');
   # print "$install_root $rsync_module $exclude $rsync_path\n";
-  my $result = system("rsync -rztpvl $exclude $rsync_path $install_root");
+  my $result = system("rsync -rztpovl $exclude $rsync_path $install_root");
   $self->test_for_error($result,"Rsync'ing the mirror site");
 }
 
@@ -123,8 +124,8 @@ sub prepare_tmp_dir {
   $tmp_path ||= $adaptor->tmp_path;
   my $full_path = "$tmp_path/$version";
 
-  $self->logit(-msg => "Creating temporary directory at $full_path");
   unless (-e "$full_path") {
+    $self->logit(-msg => "Creating temporary directory at $full_path");
     my $command = <<END;
 mkdir -p $full_path
 chmod -R 0775 $full_path

@@ -97,7 +97,7 @@ my $EMAIL_TO         = $OPTIONS{email_to};
 my $EMAIL_SUBJECT    = $OPTIONS{email_subject} || 'WormBase Monitoring Report';
 
 
-my @STEPS = split(/,/,join(',',$STEPS));
+my @STEPS = split(/,/,$STEPS);
 
 push (@STEPS,qw/acedb elegans_gff briggsae_gff blast clear_cache/) if $UPDATE_DATABASES;
 push (@STEPS,qw/software/) if $UPDATE_SOFTWARE;
@@ -105,7 +105,7 @@ push (@STEPS,qw/software/) if $UPDATE_SOFTWARE;
 # In essence, do $gmod->update() if @STEPS is not provided
 # $gmod->update(-version => $desired_version);
 push (@STEPS,qw/acedb elegans_gff briggsae_gff blast clear_cache software/)
-   if (!$UPDATE_DATABASES && !$UPDATE_SOFTWARE && !@STEPS);
+   if (!$UPDATE_DATABASES && !$UPDATE_SOFTWARE && !$STEPS);
 
 my %steps = map { $_ => 1 } @STEPS;
 
@@ -164,8 +164,7 @@ unless ($FORCE) {
 
 foreach (@STEPS) {
     # Assume we will be downloading
-    $gmod->prepare_tmp_dir(-sync_to => $SYNC_TO) if (@STEPS > 2);
-
+    # $gmod->prepare_tmp_dir(-sync_to => $SYNC_TO) if (@STEPS > 2);
      my %steps2methods = ( acedb        => 'fetch_acedb',
                              elegans_gff  => 'fetch_elegans_gff',
                              briggsae_gff => 'fetch_briggsae_gff',
@@ -173,7 +172,6 @@ foreach (@STEPS) {
                              clear_cache  => 'clear_cache',
                            );
      # Clear cache should only occur if databases had to be downloaded!
-
      my $method = $steps2methods{$_};
      if ($_ eq 'analyze_logs') {
         $gmod->analyze_logs(-version => $desired_version,

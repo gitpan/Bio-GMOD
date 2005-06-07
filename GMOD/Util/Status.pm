@@ -24,10 +24,15 @@ use Bio::GMOD::Util::Rearrange;
 
 sub logit {
   my ($self,@p) = @_;
-  my ($msg,$die) = rearrange([qw/MSG DIE/],@p);
+  my ($msg,$die,$emphasis) = rearrange([qw/MSG DIE EMPHASIS/],@p);
   my $date = $self->fetch_date;
   $msg =~ s/\n$//;
-  print STDERR "[$date] $msg...\n";
+  if ($emphasis) {
+    print STDERR "$msg...\n";
+    print STDERR '=' x (length "$msg...") . "\n" if $emphasis;
+  } else {
+    print STDERR "[$date] $msg...\n";
+  }
   die if $die;
   # my $adaptor = $self->adaptor;
   # $self->gui_messages($msg) if $adaptor->gui_messages;
@@ -38,14 +43,13 @@ sub logit {
 sub warning {
   my ($self,@p) = @_;
   my ($msg) = rearrange([qw/MSG/],@p);
-  print STDERR "\n----> $msg\n";
+  print STDERR "----> $msg\n";
 }
-
 
 sub test_for_error {
   my ($self,$result,$msg) = @_;
   if ($result != 0) {
-    $self->logit(-msg => "---> $msg: failed, $!\n",
+    $self->logit(-msg => "----> $msg: failed, $!\n",
 		 -die => 1,);
   } else {
     $self->logit(-msg => "$msg: succeeded");

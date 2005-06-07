@@ -9,9 +9,7 @@ use Bio::GMOD::Util::Rearrange;
 
 @ISA = qw/Bio::GMOD::Util::Status/;
 
-# Note: Redudandant versioning with Makefile.PL
-# This is provided here as a convenience for UA identification
-$VERSION = '0.025';
+$VERSION = '0.026';
 
 sub new {
   my ($self,@p) = @_;
