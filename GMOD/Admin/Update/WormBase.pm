@@ -3,12 +3,13 @@ package Bio::GMOD::Admin::Update::WormBase;
 use strict;
 use vars qw/@ISA/;
 use Bio::GMOD::Admin::Update;
-use Bio::GMOD::Admin::Monitor::httpd;
-use Bio::GMOD::Admin::Monitor::acedb;
-use Bio::GMOD::Admin::Monitor::mysqld;
+#use Bio::GMOD::Admin::Monitor::httpd;
+#use Bio::GMOD::Admin::Monitor::acedb;
+#use Bio::GMOD::Admin::Monitor::mysqld;
+#use Bio::GMOD::Admin::Monitor::blat;
 use Bio::GMOD::Util::Rearrange;
 use File::Path 'rmtree';
-#use Bio::GMOD::Admin::Monitor::blat;
+
 
 @ISA = qw/Bio::GMOD::Admin::Update/;
 

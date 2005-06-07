@@ -3,7 +3,7 @@ package Bio::GMOD::Admin::Monitor;
 use strict;
 use vars qw/@ISA/;
 use Bio::GMOD;
-use Bio::GMOD::Util::Email;
+#use Bio::GMOD::Util::Email;
 use Bio::GMOD::Util::Rearrange;
 
 @ISA = qw/Bio::GMOD Bio::GMOD::Util::Email/;

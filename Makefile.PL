@@ -11,7 +11,7 @@ use Config;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 
-my $VERSION = '0.024';
+my $VERSION = '0.025';
 
 my $working_dir = cwd;
 
@@ -125,7 +125,7 @@ my @scripts = qw/
 # the contents of the Makefile that is written.
 WriteMakefile(
 	      NAME         => 'Bio::GMOD',
-	      VERSION      => $VERSION,
+	      VERSION_FROM => 'GMOD.pm',
 	      PREREQ_PM    => {
 			       # DBI          => 1.58,
 			       LWP::UserAgent => 2.023,

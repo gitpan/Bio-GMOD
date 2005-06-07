@@ -52,7 +52,7 @@ my $package_modtime = localtime($package_temp[9]);
 
 
 print qq{<?xml version="1.0" encoding="UTF-8"?>\n};
-print qq{<!DOCTYPE mod_version SYSTEM "http://www.wormbase.org/dtd/bio-gmod/version.dtd">};
+print qq{<!DOCTYPE mod_version SYSTEM "http://www.wormbase.org/dtd/gmod/version.dtd">};
 print "<mod_version>\n";
 print "<name>WormBase</name>\n";
 print "<description>$title</description>\n";

@@ -1,5 +1,8 @@
 Revision history for Perl extension WormBase.
 
+0.025 Tues Jun 7 08:01:42 2005
+  - Removed dependence on Bio::GMOD::Admin::Monitor
+
 0.024 Sat Jun 4 13:11:15 2005
   - Fixed a small glitch that was requiring a module not yet built!
 
