@@ -1,5 +1,11 @@
 Revision history for Perl extension WormBase.
 
+0.027 Mon Jun 20 13:00:00 2005
+  - Maintenance release. Fixed a problem with the WormBase
+    update script that was blocking creation of temporary 
+    directories
+  - Changed the order of steps such that software syncing occurs LAST
+    to avoid breaking the site
 
 0.026 Tues Jun 7 10:38:18 2005
   - Fixed a long-standing bug with aggressive cache clearing

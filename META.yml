@@ -1,11 +1,11 @@
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         Bio-GMOD
-version:      0.026
+version:      0.027
 version_from: GMOD.pm
 installdirs:  site
 requires:
-    LWP::UserAgent:                2.023
     Net::SMTP:                     2.26
+    LWP::UserAgent:                2.023
     MIME::Lite:                    3.01
 
 distribution_type: module

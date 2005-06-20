@@ -96,6 +96,13 @@ my $EMAIL_FROM       = $OPTIONS{email_from}    || 'webmaster@wormbase.org';
 my $EMAIL_TO         = $OPTIONS{email_to};
 my $EMAIL_SUBJECT    = $OPTIONS{email_subject} || 'WormBase Monitoring Report';
 
+my %ORDER = (acedb        => 1,
+              elegans_gff  => 2,
+              briggsae_gff => 3,
+              blast        => 4,
+              analyze_logs => 5,
+              clear_cache  => 6,
+              software     => 7);
 
 my @STEPS = split(/,/,$STEPS);
 
@@ -106,8 +113,6 @@ push (@STEPS,qw/software/) if $UPDATE_SOFTWARE;
 # $gmod->update(-version => $desired_version);
 push (@STEPS,qw/acedb elegans_gff briggsae_gff blast clear_cache software/)
    if (!$UPDATE_DATABASES && !$UPDATE_SOFTWARE && !$STEPS);
-
-my %steps = map { $_ => 1 } @STEPS;
 
 my $gmod = Bio::GMOD::Admin::Update->new(-mod        => 'WormBase',
                                          -tmp_path   => $TMP,
@@ -148,38 +153,39 @@ $desired_version = $VERSION if $VERSION;
 # Which rsync module should we sync to?
 my $rsync_module = ($SYNC_TO eq 'dev') ? 'wormbase-dev' : 'wormbase-live';
 
-# Check to see if we are up-to-date only if we are NOT trying to force
-# an install
+# Force a specific order of steps
+foreach (sort { $ORDER{$a} <=> $ORDER{$b} } @STEPS) {
+    my $uptodate;
+    unless ($FORCE) {
+      if ($local{version} eq $desired_version) {
+         # monitor_servers();
+         print "Your WormBase installation is up-to-date (currently running " . $local{version} . ")\n";
+         $uptodate++;
+       }
+    }
 
-# Synchronize software if requested (or skip if not)
-do_rsync() unless (!defined $steps{software});
-
-unless ($FORCE) {
-  if ($local{version} eq $desired_version) {
-    # monitor_servers();
-    print "Your WormBase installation is up-to-date (currently running " . $local{version} . ")\n";
-    exit;
-  }
-}
-
-foreach (@STEPS) {
     # Assume we will be downloading
-    # $gmod->prepare_tmp_dir(-sync_to => $SYNC_TO) if (@STEPS > 2);
-     my %steps2methods = ( acedb        => 'fetch_acedb',
-                             elegans_gff  => 'fetch_elegans_gff',
-                             briggsae_gff => 'fetch_briggsae_gff',
-                             blast        => 'fetch_blast_blat',
-                             clear_cache  => 'clear_cache',
-                           );
-     # Clear cache should only occur if databases had to be downloaded!
-     my $method = $steps2methods{$_};
-     if ($_ eq 'analyze_logs') {
-        $gmod->analyze_logs(-version => $desired_version,
-	                    -site    => `hostname`);
-      } elsif ($method) {
-         $gmod->$method(-version => $desired_version);
-      } else {}
+    $gmod->prepare_tmp_dir(-sync_to => $SYNC_TO);
+    my %steps2methods = ( acedb        => 'fetch_acedb',
+                            elegans_gff  => 'fetch_elegans_gff',
+                            briggsae_gff => 'fetch_briggsae_gff',
+                            blast        => 'fetch_blast_blat',
+                            clear_cache  => 'clear_cache',
+                          );
 
+    my $method = $steps2methods{$_};
+    if ($_ eq 'analyze_logs') {
+       $gmod->analyze_logs(-version => $desired_version,
+                           -site    => `hostname`);
+    } elsif ($method) {
+       $gmod->$method(-version => $desired_version);
+    } else {}
+
+    # Always try to update the software regardless of whether or not the database is up-to-date 
+    if ($_ eq 'software' || $uptodate) {
+      do_rsync();
+    }
+    exit if $uptodate;
 }
 
 print "Your WormBase installation is up-to-date ($desired_version)!\n";

@@ -1,3 +1,6 @@
+"Force" option
+Status option for resuming downloads (ala update_wormbase-dev.pl)
+
 announce to GMOD list
 
 Sync adaptors and XML-generating CGI so that the read from a single XML tempalte
@@ -26,5 +29,3 @@ Future items:
   (uses same starting and stopping classes)
 
 4. archiving or removal of pervious blast versions, databases
-
-Update MakeFile.pl - install scripts in bin dir, etc  - nearly done

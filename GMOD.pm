@@ -9,7 +9,7 @@ use Bio::GMOD::Util::Rearrange;
 
 @ISA = qw/Bio::GMOD::Util::Status/;
 
-$VERSION = '0.026';
+$VERSION = '0.027';
 
 sub new {
   my ($self,@p) = @_;
