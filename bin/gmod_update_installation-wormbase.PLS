@@ -173,19 +173,21 @@ foreach (sort { $ORDER{$a} <=> $ORDER{$b} } @STEPS) {
                             clear_cache  => 'clear_cache',
                           );
 
-    my $method = $steps2methods{$_};
-    if ($_ eq 'analyze_logs') {
-       $gmod->analyze_logs(-version => $desired_version,
-                           -site    => `hostname`);
-    } elsif ($method) {
-       $gmod->$method(-version => $desired_version);
-    } else {}
+    unless ($uptodate) {
+      my $method = $steps2methods{$_};
+      if ($_ eq 'analyze_logs') {
+         $gmod->analyze_logs(-version => $desired_version,
+                             -site    => `hostname`);
+      } elsif ($method) {
+         $gmod->$method(-version => $desired_version);
+      } else {}
+    }
 
     # Always try to update the software regardless of whether or not the database is up-to-date 
     if ($_ eq 'software' || $uptodate) {
       do_rsync();
     }
-    exit if $uptodate;
+  exit if $uptodate;
 }
 
 print "Your WormBase installation is up-to-date ($desired_version)!\n";

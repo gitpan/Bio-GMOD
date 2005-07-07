@@ -119,18 +119,20 @@ sub fetch_elegans_gff {
 
   my $mysql_path = $adaptor->mysql_path;
 
+
   unless ($adaptor->dl_only) {
     $self->logit(-msg => "Unpacking and installing $gff");
     my $command = <<END;
 cd $mysql_path
-mv $mysql_path/elegans $mysql_path/elegans.bak
-gunzip -c $local_path/$gff | tar -x --no-same-owner -f -
-rm -rf $mysql_path/elegans.bak
-rm -rf $mysql_path/elegans_pmap.bak
-chgrp -R mysql $mysql_path/elegans_pmap
-chgrp -R mysql $mysql_path/elegans
-chown -R mysql $mysql_path/elegans_pmap
-chown -R mysql $mysql_path/elegans
+mv elegans elegans.bak
+mv elegans_pmap elegans_pmap.bak
+gunzip -c $local_path/$gff | tar xvf -
+rm -rf elegans.bak
+rm -rf elegans_pmap.bak
+chgrp -R mysql elegans_pmap
+chgrp -R mysql elegans
+chown -R mysql elegans_pmap
+chown -R mysql elegans
 END
 
     $self->test_for_error(system($command),"Fetching and installing C. elegans GFF database for WormBase");
@@ -238,11 +240,11 @@ sub fetch_briggsae_gff {
     $self->logit(-msg => "Unpacking and installing $gff");
     my $command = <<END;
 cd $mysql_path
-mv $mysql_path/briggsae $mysql_path/briggsae.bak
-gunzip -c $local_path/$gff | tar -x --no-same-owner -f -
-rm -rf $mysql_path/briggsae.bak
-chgrp -R mysql $mysql_path/briggsae
-chown -R mysql $mysql_path/briggsae
+mv briggsae briggsae.bak
+gunzip -c $local_path/$gff | tar -xf -
+rm -rf briggsae.bak
+chgrp -R mysql briggsae
+chown -R mysql briggsae
 END
 
     $self->test_for_error(system($command),"Fetching and installing C. briggsae GFF database for WormBase");
